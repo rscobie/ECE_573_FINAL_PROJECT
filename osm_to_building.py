@@ -1,27 +1,26 @@
+from numpy.lib.function_base import meshgrid
 import trimesh
 from shapely.geometry.polygon import Polygon
 from OSMPythonTools.overpass import Overpass #Use overpy if we want JSON instead (might be faster)
-import overpy
-#for elevation: either open-elevation POST using urllib or use elevation library
-import requests, json
+import elevation
+from osgeo import gdal
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 
-OUTPUT_DIR = "building_models"
+#FILE_TYPE = ".stl"
+FILE_TYPE = ".ply" #using this now since it preserves colors/textures and scale
+
+OUTPUT_DIR = "cache"
 EARTH_CIRCUMFERENCE = 40075 #km
 
 DEG_PER_KM = 0.0089982311916 #approximation assuming earth perfect sphere
 
 TARGET_COORD=(32.2319,-110.9501) # U of A
-TARGET_RADIUS=0.5 # Square, spherical km from center
+TARGET_RADIUS=0.48 # km from center point, square. Should be multiple of 0.03 due to elevation dataset resolution
 
-DEFAULT_BUILDING_HEIGHT = 0.006
-
-ELEVATION_ENDPOINT = "https://www.api.open-elevation.com/api/v1/lookup"
-ELEVATION_RESOLUTION = 1
-
-overpass = Overpass()
+DEFAULT_BUILDING_HEIGHT = 0.006 #6 meters
 
 # def coord_to_xy(lat, lon): #in km
 #     x = (TARGET_RADIUS*2)*(180+lon)/360
@@ -42,102 +41,146 @@ west_bound = round(TARGET_COORD[1] - km_to_deg(TARGET_RADIUS),4)
 #******************************
 #get buildings
 #******************************
-#query location #Note: overpass takes bounding box as (south,west,north,east)
-building_result = overpass.query(f"""
-way["building"]({south_bound},{west_bound},{north_bound},{east_bound});
-out geom;
-relation["building"]({south_bound},{west_bound},{north_bound},{east_bound});out;
-way(r)[!"building:part"];
-out geom;
-""")
-try:
-    os.mkdir(OUTPUT_DIR)
-except FileExistsError:
-    pass
-building_scene = trimesh.scene.scene.Scene()
-for element in building_result.elements():
-    if element.type() == "way":
-        coordinates = element.geometry()["coordinates"][0]
-        # for coordinate in coordinates:
-        #     print(coordinate)
-        coordinates.append(coordinates[0])
-        coordinates = [[deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)] for coord in coordinates]
-        poly = Polygon(coordinates)
-        mesh = trimesh.creation.extrude_polygon(poly, height=DEFAULT_BUILDING_HEIGHT)
-        name = "unnamed"
-        try:
-            tags = element.tags()
-            if tags != None:
-                name = tags['name']
-        except KeyError:
-            pass
-        mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.stl")
-        building_scene.add_geometry(mesh)
-        x,y = zip(*coordinates)
-        plt.plot(x,y)
-building_scene.show()
-plt.show()
+def get_buildings(south_bound, west_bound, north_bound, east_bound):
+    overpass = Overpass()
+    #query location #Note: overpass takes bounding box as (south,west,north,east)
+    building_result = overpass.query(f"""
+    way["building"]({south_bound},{west_bound},{north_bound},{east_bound});
+    out geom;
+    relation["building"]({south_bound},{west_bound},{north_bound},{east_bound});out;
+    way(r)[!"building:part"];
+    out geom;
+    """)
+    try:
+        os.mkdir(OUTPUT_DIR)
+    except FileExistsError:
+        pass
+    #building_scene = trimesh.scene.scene.Scene()
+    for element in building_result.elements():
+        if element.type() == "way":
+            coordinates = element.geometry()["coordinates"][0]
+            # for coordinate in coordinates:
+            #     print(coordinate)
+            coordinates.append(coordinates[0])
+            coordinates = [[deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)] for coord in coordinates]
+            poly = Polygon(coordinates)
+            mesh = trimesh.creation.extrude_polygon(poly, height=DEFAULT_BUILDING_HEIGHT)
+            name = "unnamed"
+            try:
+                tags = element.tags()
+                if tags != None:
+                    name = tags['name']
+            except KeyError:
+                pass
+            mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
+            #building_scene.add_geometry(mesh)
+            x,y = zip(*coordinates)
+            plt.plot(x,y)
+    #building_scene.show()
+    #plt.show()
 
 #******************************
 #get elevation
 #******************************
-#make json object to post
-query_dict = dict()
-query_dict["locations"] = list()
-for i in range(ELEVATION_RESOLUTION + 1):
-    for j in range(ELEVATION_RESOLUTION + 1):
-        new_coord = dict()
-        new_coord["latitude"] = south_bound + (north_bound - south_bound)*(i/ELEVATION_RESOLUTION)
-        new_coord["longitude"] = west_bound + (east_bound - west_bound)*(j/ELEVATION_RESOLUTION)
-        query_dict["locations"].append(new_coord)
-query_coords = json.dumps(query_dict).replace("'",'"')
-print(query_coords)
-elevations = requests.post(ELEVATION_ENDPOINT, json=query_coords, headers={"Accept":"application/json", "Content-Type":"application/json"})
-# print(query_dict)
-# elevations = requests.post(ELEVATION_ENDPOINT, data=query_dict)
-print(elevations.content)
+def get_elevation(south_bound, west_bound, north_bound, east_bound):
+    #get file from internet (of from local cache)
+    file_name = f"{south_bound}_{west_bound}_{north_bound}_{east_bound}.tif"
+    elevation.clip(bounds=(west_bound, south_bound, east_bound, north_bound),output=file_name,cache_dir=OUTPUT_DIR)
+    data = gdal.Open(OUTPUT_DIR + "/SRTM1/" + file_name)
+    band = data.GetRasterBand(1)
+    elevations = band.ReadAsArray(0,0, band.XSize, band.YSize)
+    #generate mesh
+    points = list()
+    triangles = list()
+    #generate vertices
+    for i in range(elevations.shape[0]):
+        for j in range(elevations.shape[1]):
+            points.append((2*TARGET_RADIUS*i/elevations.shape[0], 2*TARGET_RADIUS*j/elevations.shape[1], elevations[i][j]/1000) )
+    #generate faces
+    for i in range(elevations.shape[0] - 1):
+        for j in range(elevations.shape[1] -1):
+            triangles.append( ((i+1)*elevations.shape[1] + j + 1,i*elevations.shape[1] + j+1,i*elevations.shape[1] + j))
+            triangles.append(((i+1)*elevations.shape[1], (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j))
+
+    terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles)
+    terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
+    #terrain_mesh.show()
+
+
 #******************************
 #get roads
 #******************************
-#query location #Note: overpass takes bounding box as (south,west,north,east)
-road_result = overpass.query(f"""
-(
-  way[highway=motorway]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=motorway_link]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=trunk]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=trunk_link]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=primary]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=secondary]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=tertiary]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=unclassified]({south_bound},{west_bound},{north_bound},{east_bound});
-  way[highway=residential]({south_bound},{west_bound},{north_bound},{east_bound});
-);
-out geom;
+def get_roads(south_bound, west_bound, north_bound, east_bound):
+    overpass = Overpass()
+    #query location #Note: overpass takes bounding box as (south,west,north,east)
+    road_result = overpass.query(f"""
+    (
+    way[highway=motorway]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=motorway_link]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=trunk]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=trunk_link]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=primary]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=secondary]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=tertiary]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=unclassified]({south_bound},{west_bound},{north_bound},{east_bound});
+    way[highway=residential]({south_bound},{west_bound},{north_bound},{east_bound});
+    );
+    out geom;
 
-""")
-try:
-    os.mkdir(OUTPUT_DIR)
-except FileExistsError:
-    pass
-#road_scene = trimesh.scene.scene.Scene()
-for element in road_result.elements():
-    if element.type() == "way":
-        coordinates = np.asarray(element.geometry()["coordinates"]).squeeze().tolist()
-        # for coordinate in coordinates:
-        #     print(coordinate)
-        coordinates = [[deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)] for coord in coordinates]
-        #poly = Polygon(coordinates)
-        #mesh = trimesh.creation.extrude_polygon(poly, height=DEFAULT_BUILDING_HEIGHT)
-        name = "unnamed"
-        try:
-            tags = element.tags()
-            if tags != None:
-                name = tags['name']
-        except KeyError:
-            pass
-        #mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.stl")
-        #road_scene.add_geometry(mesh)
-        x,y = zip(*coordinates)
-        plt.plot(x,y)
-#road_scene.show()
-plt.show()
+    """)
+    try:
+        os.mkdir(OUTPUT_DIR)
+    except FileExistsError:
+        pass
+    road_scene = trimesh.scene.scene.Scene()
+    for element in road_result.elements():
+        if element.type() == "way":
+            coordinates = np.asarray(element.geometry()["coordinates"]).squeeze().tolist()
+            # for coordinate in coordinates:
+            #     print(coordinate)
+            coordinates = [[deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)] for coord in coordinates]
+            name = "unnamed"
+            try:
+                tags = element.tags()
+                if tags != None:
+                    name = tags['name']
+            except KeyError:
+                pass
+            x,y = zip(*coordinates)
+            #make meshes from roads
+            points=list()
+            triangles=list()
+            for i in range(len(x) - 1):
+                #find perpendicular points
+                u = (x[i] - x[i+1],y[i] - y[i+1])#road vector
+                length = 0.005/math.sqrt(u[0]**2+u[1]**2) #make points 5 meters away from road center
+                v1 = (-1*u[1]*length,u[0]*length)
+                v2 = (u[1]*length,-1*u[0]*length)
+                points.append( (x[i]+v1[0],y[i]+v1[1], 0) )
+                points.append( (x[i]+v2[0],y[i]+v2[1], 0) )
+                points.append( (x[i+1]+v1[0],y[i+1]+v1[1], 0) )
+                points.append( (x[i+1]+v2[0],y[i+1]+v2[1], 0) )
+            for i in range(len(x) - 1):
+                triangles.append( (4*i + 0, 4*i + 1, 4*i + 3) )
+                triangles.append( (4*i + 0, 4*i + 3, 4*i + 2) )
+                #add second set of triangles with opposite surface normals, to avoid
+                #accidental invisible roads
+                triangles.append( (4*i + 0, 4*i + 3, 4*i + 1) )
+                triangles.append( (4*i + 0, 4*i + 2, 4*i + 3) )
+            mesh = trimesh.base.Trimesh(vertices=points, faces=triangles)
+            #mesh.show()
+            #road_scene.add_geometry(mesh)
+            mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
+            #plt.plot(x,y)
+    #road_scene.show()
+    #plt.show()
+
+if __name__ == "__main__":
+    get_buildings(south_bound, west_bound, north_bound, east_bound)
+    get_elevation(south_bound, west_bound, north_bound, east_bound)
+    get_roads(south_bound, west_bound, north_bound, east_bound)
+
+    """
+    TODO: use elevation data to give roads and elevation models height
+    TODO: wrap up in ROS node, add topics
+    """
