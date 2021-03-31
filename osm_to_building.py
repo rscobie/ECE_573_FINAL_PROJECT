@@ -17,7 +17,8 @@ EARTH_CIRCUMFERENCE = 40075 #km
 
 DEG_PER_KM = 0.0089982311916 #approximation assuming earth perfect sphere
 
-TARGET_COORD=(32.2319,-110.9501) # U of A
+#TARGET_COORD=(32.2319,-110.9501) # U of A
+TARGET_COORD=(32.4387,-110.7598) # Summerhaven
 TARGET_RADIUS=0.48 # km from center point, square. Should be multiple of 0.03 due to elevation dataset resolution
 
 DEFAULT_BUILDING_HEIGHT = 0.006 #6 meters
@@ -99,8 +100,8 @@ def get_elevation(south_bound, west_bound, north_bound, east_bound):
     #generate faces
     for i in range(elevations.shape[0] - 1):
         for j in range(elevations.shape[1] -1):
-            triangles.append( ((i+1)*elevations.shape[1] + j + 1,i*elevations.shape[1] + j+1,i*elevations.shape[1] + j))
-            triangles.append(((i+1)*elevations.shape[1], (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j))
+            triangles.append( ( (i+1)*elevations.shape[1] + j + 1,i*elevations.shape[1] + j+1,i*elevations.shape[1] + j ) )
+            triangles.append( ( (i+1)*elevations.shape[1] + j, (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j ) )
 
     terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles)
     terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
