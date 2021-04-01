@@ -50,9 +50,9 @@ my_scene = trimesh.scene.scene.Scene()
 #******************************
 #get buildings
 #******************************
-def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations):
+def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
     #debug
-    global my_scene
+    #global my_scene
 
     overpass = Overpass()
     #query location #Note: overpass takes bounding box as (south,west,north,east)
@@ -109,20 +109,22 @@ def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations):
                     name = tags['name']
             except KeyError:
                 pass
-            mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
+            chunk_model = trimesh.util.concatenate((chunk_model,mesh))
+            #mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
             #building_scene.add_geometry(mesh)
-            my_scene.add_geometry(mesh)
-            x,y = zip(*coordinates)
-            plt.plot(x,y)
+            #my_scene.add_geometry(mesh)
+            #x,y = zip(*coordinates)
+            #plt.plot(x,y)
     #building_scene.show()
     #plt.show()
+    return chunk_model
 
 #******************************
 #get elevation
 #******************************
 def get_elevation(south_bound, west_bound, north_bound, east_bound):
     #debug
-    global my_scene
+    #global my_scene
     #get file from internet (of from local cache)
     file_name = f"{south_bound}_{west_bound}_{north_bound}_{east_bound}.tif"
     elevation.clip(bounds=(west_bound, south_bound, east_bound, north_bound),output=file_name,cache_dir=OUTPUT_DIR)
@@ -143,18 +145,18 @@ def get_elevation(south_bound, west_bound, north_bound, east_bound):
             triangles.append( ( (i+1)*elevations.shape[1] + j, (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j ) )
 
     terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles)
-    terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
-    my_scene.add_geometry(terrain_mesh)
+    #terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
+    #my_scene.add_geometry(terrain_mesh)
     #terrain_mesh.show()
-    return elevations
+    return elevations, terrain_mesh
 
 
 #******************************
 #get roads
 #******************************
-def get_roads(south_bound, west_bound, north_bound, east_bound, elevations):
+def get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
     #debug
-    global my_scene
+    #global my_scene
     overpass = Overpass()
     #query location #Note: overpass takes bounding box as (south,west,north,east)
     road_result = overpass.query(f"""
@@ -227,33 +229,34 @@ def get_roads(south_bound, west_bound, north_bound, east_bound, elevations):
                 triangles.append( (4*i + 0, 4*i + 3, 4*i + 1) )
                 triangles.append( (4*i + 0, 4*i + 2, 4*i + 3) )
             mesh = trimesh.base.Trimesh(vertices=points, faces=triangles)
+            chunk_model = trimesh.util.concatenate((chunk_model,mesh))
             #mesh.show()
             #road_scene.add_geometry(mesh)
-            my_scene.add_geometry(mesh)
-            mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
+            #my_scene.add_geometry(mesh)
+            #mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
             #plt.plot(x,y)
     #road_scene.show()
     #plt.show()
+    return chunk_model
 
 def generate_chunk(lat,lon):
     south_bound = round(TARGET_COORD[0] - km_to_deg(TARGET_RADIUS),4)
     north_bound = round(TARGET_COORD[0] + km_to_deg(TARGET_RADIUS),4)
     east_bound = round(TARGET_COORD[1] + km_to_deg(TARGET_RADIUS),4)
     west_bound = round(TARGET_COORD[1] - km_to_deg(TARGET_RADIUS),4)
-    elevations = get_elevation(south_bound, west_bound, north_bound, east_bound)
-    get_buildings(south_bound, west_bound, north_bound, east_bound, elevations)
-    get_roads(south_bound, west_bound, north_bound, east_bound, elevations)
+    elevations, chunk_model = get_elevation(south_bound, west_bound, north_bound, east_bound)
+    chunk_model = get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
+    chunk_model = get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
+    chunk_model.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
+    chunk_model.show()
 
 if __name__ == "__main__":
     generate_chunk(TARGET_COORD[0], TARGET_COORD[1])
-    my_scene.show()
+    #my_scene.show()
 
     """
     TODO: refactor: clean up magic numbers (to be more explicit with units), add function to get single elevation at point
     TODO: elevation locations off by 1 sample (30m) in both directions, currently a workaround in place
     TODO: some building formats not supported, messes up parsing of coordinate data
-    TODO: wrap up in ROS node, add topics that take commands, send file paths for models
-
-    maybe------------
-    TODO: make entire chunk a single model, just union all the individual meshes together. Then only need to save one file, and send one file path to simulation node
+    ***TODO: wrap up in ROS node, add topics that take commands, send file paths for models
     """
