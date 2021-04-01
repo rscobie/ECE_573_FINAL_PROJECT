@@ -44,13 +44,31 @@ def km_to_deg(km):
 def deg_to_km(deg):
     return deg/DEG_PER_KM
 
+"""
+#TODO: temporary solution while off-by-one bug fixed
+
+Make this more general (by taking lat, lon instead of x,y) and use elsewhere in future, right now just used as bug fix
+"""
+def get_elevation(coord,elevations): 
+    x_index = int(coord[0]/0.03)
+    y_index = int(coord[1]/0.03)
+    if int(coord[0]/0.03) > elevations.shape[0] - 1:
+        x_index = elevations.shape[0] - 1
+    if int(coord[1]/0.03) > elevations.shape[1] - 1:
+        y_index = elevations.shape[1] - 1
+    if int(coord[0]/0.03) < 0:
+        x_index = 0
+    if int(coord[1]/0.03) < 0:
+        y_index = 0
+    return elevations[x_index, y_index]
+
 #debug
 my_scene = trimesh.scene.scene.Scene()
 
 #******************************
 #get buildings
 #******************************
-def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
+def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
     #debug
     #global my_scene
 
@@ -83,17 +101,7 @@ def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
             #get lowest elevation (so that building not floating)
             min_elevation = 100000000000000
             for coord in coordinates:
-                x_index = int(coord[0]/0.03)
-                y_index = int(coord[1]/0.03)
-                if int(coord[0]/0.03) > elevations.shape[0] - 1: #TODO: temporary solution while off-by-one bug fixed
-                    x_index = elevations.shape[0] - 1
-                if int(coord[1]/0.03) > elevations.shape[1] - 1:
-                    y_index = elevations.shape[1] - 1
-                if int(coord[0]/0.03) < 0:
-                    x_index = 0
-                if int(coord[1]/0.03) < 0:
-                    y_index = 0
-                elevation = elevations[x_index,y_index]
+                elevation = get_elevation(coord, elevations)
                 if elevation < min_elevation:
                     min_elevation = elevation
             min_elevation /= 1000#meters to km
@@ -102,6 +110,12 @@ def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
             for i in range(len(mesh.vertices)):
                 mesh.vertices[i][2] += min_elevation
             
+            colors = list()
+            #apply colors
+            for face in mesh.faces:
+                colors.append((255,0,0))#red
+            visual = trimesh.visual.color.ColorVisuals(mesh=mesh, face_colors=colors)
+            mesh.visual = visual
             name = "unnamed"
             try:
                 tags = element.tags()
@@ -109,6 +123,7 @@ def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
                     name = tags['name']
             except KeyError:
                 pass
+
             chunk_model = trimesh.util.concatenate((chunk_model,mesh))
             #mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
             #building_scene.add_geometry(mesh)
@@ -122,7 +137,7 @@ def get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
 #******************************
 #get elevation
 #******************************
-def get_elevation(south_bound, west_bound, north_bound, east_bound):
+def gen_elevation(south_bound, west_bound, north_bound, east_bound):
     #debug
     #global my_scene
     #get file from internet (of from local cache)
@@ -134,6 +149,7 @@ def get_elevation(south_bound, west_bound, north_bound, east_bound):
     #generate mesh
     points = list()
     triangles = list()
+    colors = list()#per face
     #generate vertices
     for i in range(elevations.shape[0]):
         for j in range(elevations.shape[1]):
@@ -143,18 +159,19 @@ def get_elevation(south_bound, west_bound, north_bound, east_bound):
         for j in range(elevations.shape[1] -1):
             triangles.append( ( (i+1)*elevations.shape[1] + j + 1,i*elevations.shape[1] + j+1,i*elevations.shape[1] + j ) )
             triangles.append( ( (i+1)*elevations.shape[1] + j, (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j ) )
+            colors.append((0,255,0))#green
+            colors.append((0,255,0))#green
 
-    terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles)
+    terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles, face_colors=colors)
     #terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
     #my_scene.add_geometry(terrain_mesh)
     #terrain_mesh.show()
     return elevations, terrain_mesh
 
-
 #******************************
 #get roads
 #******************************
-def get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
+def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
     #debug
     #global my_scene
     overpass = Overpass()
@@ -186,15 +203,15 @@ def get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
 
             #cut roads that go out of bounds short
             temp_coords = list()
-            for coordinate in coordinates:
-                if coordinate[0] < 0:
-                    coordinate[0] = 0
-                if coordinate[0] > 2*(TARGET_RADIUS - 0.03): #TODO: the -0.03 is a temporary solution while the off-by-1 elevation bug is investigated
-                    coordinate[0] = 2*(TARGET_RADIUS - 0.03)
-                if coordinate[1] < 0:
-                    coordinate[1] = 0
-                if coordinate[1] > 2*(TARGET_RADIUS - 0.03):
-                    coordinate[1] = 2*(TARGET_RADIUS - 0.03)
+            # for coordinate in coordinates:
+            #     if coordinate[0] < 0:
+            #         coordinate[0] = 0
+            #     if coordinate[0] > 2*(TARGET_RADIUS - 0.03): #TODO: the -0.03 is a temporary solution while the off-by-1 elevation bug is investigated
+            #         coordinate[0] = 2*(TARGET_RADIUS - 0.03)
+            #     if coordinate[1] < 0:
+            #         coordinate[1] = 0
+            #     if coordinate[1] > 2*(TARGET_RADIUS - 0.03):
+            #         coordinate[1] = 2*(TARGET_RADIUS - 0.03)
 
             name = "unnamed"
             try:
@@ -207,6 +224,7 @@ def get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
             #make meshes from roads
             points=list()
             triangles=list()
+            colors=list()#face colors
             for i in range(len(x) - 1):
                 #find perpendicular points
                 u = (x[i] - x[i+1],y[i] - y[i+1])#road vector
@@ -217,10 +235,10 @@ def get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
                     length = 0.005/math.sqrt(u[0]**2+u[1]**2) #make points 5 meters away from road center
                 v1 = (-1*u[1]*length,u[0]*length)
                 v2 = (u[1]*length,-1*u[0]*length)
-                points.append( (x[i]+v1[0],y[i]+v1[1], elevations[int((x[i]+v1[0])/0.03),int((y[i]+v1[1])/0.03)]/1000 + ROAD_OFFSET) )
-                points.append( (x[i]+v2[0],y[i]+v2[1], elevations[int((x[i]+v2[0])/0.03),int((y[i]+v2[1])/0.03)]/1000 + ROAD_OFFSET) )
-                points.append( (x[i+1]+v1[0],y[i+1]+v1[1], elevations[int((x[i+1]+v1[0])/0.03),int((y[i+1]+v1[1])/0.03)]/1000 + ROAD_OFFSET) )
-                points.append( (x[i+1]+v2[0],y[i+1]+v2[1], elevations[int((x[i+1]+v2[0])/0.03),int((y[i+1]+v2[1])/0.03)]/1000 + ROAD_OFFSET) )
+                points.append( (x[i]+v1[0],y[i]+v1[1], get_elevation([x[i]+v1[0],y[i]+v1[1]], elevations)/1000 + ROAD_OFFSET) )
+                points.append( (x[i]+v2[0],y[i]+v2[1], get_elevation([x[i]+v2[0],y[i]+v2[1]], elevations)/1000 + ROAD_OFFSET) )
+                points.append( (x[i+1]+v1[0],y[i+1]+v1[1], get_elevation([x[i+1]+v1[0],y[i+1]+v1[1]], elevations)/1000 + ROAD_OFFSET) )
+                points.append( (x[i+1]+v2[0],y[i+1]+v2[1], get_elevation([x[i+1]+v2[0],y[i+1]+v2[1]], elevations)/1000 + ROAD_OFFSET) )
             for i in range(len(x) - 1):
                 triangles.append( (4*i + 0, 4*i + 1, 4*i + 3) )
                 triangles.append( (4*i + 0, 4*i + 3, 4*i + 2) )
@@ -228,7 +246,11 @@ def get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
                 #accidental invisible roads
                 triangles.append( (4*i + 0, 4*i + 3, 4*i + 1) )
                 triangles.append( (4*i + 0, 4*i + 2, 4*i + 3) )
-            mesh = trimesh.base.Trimesh(vertices=points, faces=triangles)
+                colors.append((0,0,0))#black
+                colors.append((0,0,0))#black
+                colors.append((0,0,0))#black
+                colors.append((0,0,0))#black
+            mesh = trimesh.base.Trimesh(vertices=points, faces=triangles,face_colors=colors)
             chunk_model = trimesh.util.concatenate((chunk_model,mesh))
             #mesh.show()
             #road_scene.add_geometry(mesh)
@@ -244,9 +266,9 @@ def generate_chunk(lat,lon):
     north_bound = round(TARGET_COORD[0] + km_to_deg(TARGET_RADIUS),4)
     east_bound = round(TARGET_COORD[1] + km_to_deg(TARGET_RADIUS),4)
     west_bound = round(TARGET_COORD[1] - km_to_deg(TARGET_RADIUS),4)
-    elevations, chunk_model = get_elevation(south_bound, west_bound, north_bound, east_bound)
-    chunk_model = get_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
-    chunk_model = get_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
+    elevations, chunk_model = gen_elevation(south_bound, west_bound, north_bound, east_bound)
+    chunk_model = gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
+    chunk_model = gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     chunk_model.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
     chunk_model.show()
 
@@ -258,5 +280,6 @@ if __name__ == "__main__":
     TODO: refactor: clean up magic numbers (to be more explicit with units), add function to get single elevation at point
     TODO: elevation locations off by 1 sample (30m) in both directions, currently a workaround in place
     TODO: some building formats not supported, messes up parsing of coordinate data
+    TODO: find elegent way to cut off ways (buildings/roads) that are partially outside of terrain bounds (left in place for now, using last known elevation)
     ***TODO: wrap up in ROS node, add topics that take commands, send file paths for models
     """
