@@ -14,8 +14,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-#FILE_TYPE = ".stl"
-FILE_TYPE = ".ply" #using this now since it preserves colors/textures and scale
+import rospy
+from std_msgs.msg import Float32MultiArray, String
+
+#FILE_TYPE = "stl"
+FILE_TYPE = "ply" #using this now since it preserves colors/textures and scale
 
 OUTPUT_DIR = "cache"
 EARTH_CIRCUMFERENCE = 40075 #km
@@ -262,18 +265,32 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
     return chunk_model
 
 def generate_chunk(lat,lon):
-    south_bound = round(TARGET_COORD[0] - km_to_deg(TARGET_RADIUS),4)
-    north_bound = round(TARGET_COORD[0] + km_to_deg(TARGET_RADIUS),4)
-    east_bound = round(TARGET_COORD[1] + km_to_deg(TARGET_RADIUS),4)
-    west_bound = round(TARGET_COORD[1] - km_to_deg(TARGET_RADIUS),4)
+    south_bound = round(lat - km_to_deg(TARGET_RADIUS),4)
+    north_bound = round(lat + km_to_deg(TARGET_RADIUS),4)
+    east_bound = round(lon + km_to_deg(TARGET_RADIUS),4)
+    west_bound = round(lon - km_to_deg(TARGET_RADIUS),4)
     elevations, chunk_model = gen_elevation(south_bound, west_bound, north_bound, east_bound)
     chunk_model = gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     chunk_model = gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
-    chunk_model.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
-    chunk_model.show()
+    model_path = f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}"
+    chunk_model.export(model_path)
+    #chunk_model.show()
+    return model_path
 
 if __name__ == "__main__":
-    generate_chunk(TARGET_COORD[0], TARGET_COORD[1])
+    publisher = rospy.Publisher("chunk_path", String, queue_size=10)
+
+    def callback(array):
+        lat = array.data[0]
+        lon = array.data[1]
+        pub_val = String()
+        pub_val.data = generate_chunk(lat, lon)
+        publisher.publish(pub_val)
+
+    subscriber = rospy.Subscriber("chunk_coordinate", Float32MultiArray, callback, queue_size=10) #1d arrays of size 2
+    rospy.init_node("generation_node")
+    rospy.spin()
+    #generate_chunk(TARGET_COORD[0], TARGET_COORD[1])
     #my_scene.show()
 
     """
