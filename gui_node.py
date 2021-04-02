@@ -36,8 +36,11 @@ class MyWindow(QMainWindow):
         #rospy.spin()
         #self.publishFunct()
         while not rospy.is_shutdown():
-            self.s_num.data.append(10)
-            self.s_num.data.append(20)
+            self.s_num.data.append(self.latValue)
+            self.s_num.data.append(self.lonValue)
+            #self.s_num.data.append(self.graphicVal)
+            for i in self.s_num.data:
+                print(i, "\n")
             rospy.loginfo(self.s_num)
             self.pub.publish(self.s_num)
             self.rate.sleep()
@@ -47,7 +50,7 @@ class MyWindow(QMainWindow):
         #self.latBox.delete()
         #self.lonBox.delete()
         self.setGeometry(500, 500, 600, 600)
-        self.publishFunct()
+        #self.publishFunct()
 
         self.latValue = self.latBox.text()
         self.lonValue = self.lonBox.text()
@@ -74,6 +77,8 @@ class MyWindow(QMainWindow):
         self.b2.setGeometry(250, 350, 100, 50)
         self.b2.show()
         self.b2_flag = 1
+        self.publishFunct()
+
 
 
     def initUI(self):
