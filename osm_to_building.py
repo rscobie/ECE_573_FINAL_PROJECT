@@ -18,7 +18,9 @@ import rospy
 from std_msgs.msg import Float32MultiArray, String
 
 #FILE_TYPE = "stl"
-FILE_TYPE = "ply" #using this now since it preserves colors/textures and scale
+#FILE_TYPE = "ply" #using this now since it preserves colors/textures and scale
+#FILE_TYPE = "dae"
+FILE_TYPE = "obj"
 
 OUTPUT_DIR = "cache"
 EARTH_CIRCUMFERENCE = 40075 #km
@@ -113,11 +115,11 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
             for i in range(len(mesh.vertices)):
                 mesh.vertices[i][2] += min_elevation
             
-            colors = list()
+            colors = list() #vertex colors
             #apply colors
-            for face in mesh.faces:
+            for vertex in mesh.vertices:
                 colors.append((255,0,0))#red
-            visual = trimesh.visual.color.ColorVisuals(mesh=mesh, face_colors=colors)
+            visual = trimesh.visual.color.ColorVisuals(mesh=mesh, vertex_colors=colors)
             mesh.visual = visual
             name = "unnamed"
             try:
@@ -152,20 +154,19 @@ def gen_elevation(south_bound, west_bound, north_bound, east_bound):
     #generate mesh
     points = list()
     triangles = list()
-    colors = list()#per face
+    colors = list()#per vertex
     #generate vertices
     for i in range(elevations.shape[0]):
         for j in range(elevations.shape[1]):
             points.append((2*TARGET_RADIUS*i/elevations.shape[0], 2*TARGET_RADIUS*j/elevations.shape[1], elevations[i][j]/1000) )
+            colors.append((0,255,0))#green
     #generate faces
     for i in range(elevations.shape[0] - 1):
         for j in range(elevations.shape[1] -1):
             triangles.append( ( (i+1)*elevations.shape[1] + j + 1,i*elevations.shape[1] + j+1,i*elevations.shape[1] + j ) )
             triangles.append( ( (i+1)*elevations.shape[1] + j, (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j ) )
-            colors.append((0,255,0))#green
-            colors.append((0,255,0))#green
 
-    terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles, face_colors=colors)
+    terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles, vertex_colors=colors)
     #terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
     #my_scene.add_geometry(terrain_mesh)
     #terrain_mesh.show()
@@ -227,7 +228,7 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
             #make meshes from roads
             points=list()
             triangles=list()
-            colors=list()#face colors
+            colors=list()#vertex colors
             for i in range(len(x) - 1):
                 #find perpendicular points
                 u = (x[i] - x[i+1],y[i] - y[i+1])#road vector
@@ -242,6 +243,10 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
                 points.append( (x[i]+v2[0],y[i]+v2[1], get_elevation([x[i]+v2[0],y[i]+v2[1]], elevations)/1000 + ROAD_OFFSET) )
                 points.append( (x[i+1]+v1[0],y[i+1]+v1[1], get_elevation([x[i+1]+v1[0],y[i+1]+v1[1]], elevations)/1000 + ROAD_OFFSET) )
                 points.append( (x[i+1]+v2[0],y[i+1]+v2[1], get_elevation([x[i+1]+v2[0],y[i+1]+v2[1]], elevations)/1000 + ROAD_OFFSET) )
+                colors.append((0,0,0))#black
+                colors.append((0,0,0))#black
+                colors.append((0,0,0))#black
+                colors.append((0,0,0))#black
             for i in range(len(x) - 1):
                 triangles.append( (4*i + 0, 4*i + 1, 4*i + 3) )
                 triangles.append( (4*i + 0, 4*i + 3, 4*i + 2) )
@@ -249,11 +254,8 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
                 #accidental invisible roads
                 triangles.append( (4*i + 0, 4*i + 3, 4*i + 1) )
                 triangles.append( (4*i + 0, 4*i + 2, 4*i + 3) )
-                colors.append((0,0,0))#black
-                colors.append((0,0,0))#black
-                colors.append((0,0,0))#black
-                colors.append((0,0,0))#black
-            mesh = trimesh.base.Trimesh(vertices=points, faces=triangles,face_colors=colors)
+
+            mesh = trimesh.base.Trimesh(vertices=points, faces=triangles,vertex_colors=colors)
             chunk_model = trimesh.util.concatenate((chunk_model,mesh))
             #mesh.show()
             #road_scene.add_geometry(mesh)
@@ -290,6 +292,7 @@ if __name__ == "__main__":
     subscriber = rospy.Subscriber("chunk_coordinate", Float32MultiArray, callback, queue_size=10) #1d arrays of size 2
     rospy.init_node("generation_node")
     rospy.spin()
+
     #generate_chunk(TARGET_COORD[0], TARGET_COORD[1])
     #my_scene.show()
 
