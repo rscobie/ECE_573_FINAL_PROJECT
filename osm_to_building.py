@@ -275,8 +275,9 @@ def generate_chunk(lat,lon):
     chunk_model = gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     chunk_model = gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     model_path = f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}"
+    chunk_model.visual = chunk_model.visual.to_texture()#gazebo can't see vertex colors, so save as texture
     chunk_model.export(model_path)
-    #chunk_model.show()
+    chunk_model.show()
     return model_path
 
 if __name__ == "__main__":

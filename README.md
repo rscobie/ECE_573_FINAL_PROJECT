@@ -10,7 +10,7 @@ follow instructions at this link: http://wiki.ros.org/Installation/Ubuntu
 `sudo apt-get install gdal-bin`
 
 ## install python dependencies
-`pip install trimesh shapely OSMPythonTools elevation GDAL numpy networkx`
+`pip install trimesh shapely OSMPythonTools elevation GDAL numpy networkx Pillow`
 
 ## initialize ROS workspace
 To initialize the workspace, run: 
