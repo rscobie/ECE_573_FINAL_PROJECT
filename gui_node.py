@@ -9,7 +9,6 @@ import numpy as np
 from PyQt5.QtWidgets import * #QApplication, QMainWindow, QPushButton, QVBoxLayout
 import sys
 
-
 class MyWindow(QMainWindow):
     def __init__(self):
         print("Entering mywindow\n")
@@ -17,7 +16,7 @@ class MyWindow(QMainWindow):
         self.rate = rospy.Rate(5)
         self.s_num = Float32MultiArray()
         self.s_num.data = []
-        self.pub = rospy.Publisher('/latAndlon', Float32MultiArray, queue_size=10)
+        self.pub = rospy.Publisher('/chuck_coordinate', Float32MultiArray, queue_size=10)
 
         super(MyWindow, self).__init__()
         #self.setGeometry(500, 500, 700, 700)
@@ -35,21 +34,23 @@ class MyWindow(QMainWindow):
         
         #rospy.spin()
         #self.publishFunct()
+        #self.s_num.data.clear()
         while not rospy.is_shutdown():
             self.s_num.data.append(self.latValue)
             self.s_num.data.append(self.lonValue)
             #self.s_num.data.append(self.graphicVal)
             for i in self.s_num.data:
-                print(i, "\n")
+                print("an element ",i, "\n")
             rospy.loginfo(self.s_num)
             self.pub.publish(self.s_num)
-            self.rate.sleep()
             break
+            self.rate.sleep()
+            
 
     def clicked(self):
         #self.latBox.delete()
         #self.lonBox.delete()
-        self.setGeometry(500, 500, 600, 600)
+        #self.setGeometry(500, 500, 600, 600)
         #self.publishFunct()
 
         self.latValue = self.latBox.text()
