@@ -16,7 +16,7 @@ class MyWindow(QMainWindow):
         self.rate = rospy.Rate(5)
         self.s_num = Float32MultiArray()
         self.s_num.data = []
-        self.pub = rospy.Publisher('/chuck_coordinate', Float32MultiArray, queue_size=10)
+        self.pub = rospy.Publisher('/chunk_coordinate', Float32MultiArray, queue_size=10)
 
         super(MyWindow, self).__init__()
         #self.setGeometry(500, 500, 700, 700)
@@ -36,8 +36,8 @@ class MyWindow(QMainWindow):
         #self.publishFunct()
         #self.s_num.data.clear()
         while not rospy.is_shutdown():
-            self.s_num.data.append(self.latValue)
-            self.s_num.data.append(self.lonValue)
+            self.s_num.data.append(float(self.latValue))
+            self.s_num.data.append(float(self.lonValue))
             #self.s_num.data.append(self.graphicVal)
             for i in self.s_num.data:
                 print("an element ",i, "\n")
