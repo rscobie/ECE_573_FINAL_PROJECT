@@ -103,7 +103,7 @@ class MyWindow(QMainWindow):
         #self.qBox.setGeometry(250, 200, 125, 30)
 
         self.drop_down = QComboBox(self)
-        item_list = ["ok", "good", "excelent"]
+        item_list = ["ok", "good", "excellent"]
         self.drop_down.setStyleSheet('background-color:white')
         self.drop_down.addItems(item_list)
         self.drop_down.setGeometry(250, 200, 125, 30)
@@ -117,13 +117,13 @@ class MyWindow(QMainWindow):
 
         #create latitude input box
         self.latBox = QLineEdit(self)
-        self.latBox.setPlaceholderText("Enter Longitude")
+        self.latBox.setPlaceholderText("Enter Latitude")
         self.latBox.setStyleSheet('background-color:white')
         self.latBox.setGeometry(250, 300, 125, 30)
 
         #create longitude input box
         self.lonBox = QLineEdit(self)
-        self.lonBox.setPlaceholderText("Enter Latitude")
+        self.lonBox.setPlaceholderText("Enter Longitude")
         self.lonBox.setStyleSheet('background-color:white')
         self.lonBox.setGeometry(400, 300, 125, 30)
         

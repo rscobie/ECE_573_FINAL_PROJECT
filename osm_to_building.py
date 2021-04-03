@@ -22,7 +22,7 @@ from std_msgs.msg import Float32MultiArray, String
 #FILE_TYPE = "dae"
 FILE_TYPE = "obj"
 
-OUTPUT_DIR = "cache"
+OUTPUT_DIR = os.path.dirname(os.path.realpath(__file__)) + "/" + "cache"
 EARTH_CIRCUMFERENCE = 40075 #km
 
 DEG_PER_KM = 0.0089982311916 #approximation assuming earth perfect sphere
@@ -275,8 +275,9 @@ def generate_chunk(lat,lon):
     chunk_model = gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     chunk_model = gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     model_path = f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}"
+    chunk_model.visual = chunk_model.visual.to_texture()#gazebo can't see vertex colors, so save as texture
     chunk_model.export(model_path)
-    #chunk_model.show()
+    chunk_model.show()
     return model_path
 
 if __name__ == "__main__":
@@ -291,6 +292,7 @@ if __name__ == "__main__":
 
     subscriber = rospy.Subscriber("chunk_coordinate", Float32MultiArray, callback, queue_size=10) #1d arrays of size 2
     rospy.init_node("generation_node")
+    #os.chdir("./src/ECE_573_FINAL_PROJECT")#move us into package, ros starts us off in workspace root ece573_ws
     rospy.spin()
 
     #generate_chunk(TARGET_COORD[0], TARGET_COORD[1])
