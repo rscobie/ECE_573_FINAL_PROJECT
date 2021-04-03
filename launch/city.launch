@@ -1,6 +1,6 @@
 <launch>
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find simulation_node_gazebo)/worlds/city.world"/>
+    <arg name="world_name" value="$(find ECE_573_FINAL_PROJECT)/worlds/city.world"/>
     <!-- more default parameters can be changed here -->
   </include>
 </launch>
