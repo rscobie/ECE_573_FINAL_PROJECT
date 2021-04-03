@@ -36,15 +36,15 @@ class MyWindow(QMainWindow):
         #self.publishFunct()
         #self.s_num.data.clear()
         while not rospy.is_shutdown():
-            self.s_num.data.append(self.latValue)
-            self.s_num.data.append(self.lonValue)
+            self.s_num.data.append(float(self.latValue))
+            self.s_num.data.append(float(self.lonValue))
             #self.s_num.data.append(self.graphicVal)
             for i in self.s_num.data:
                 print("an element ",i, "\n")
             rospy.loginfo(self.s_num)
             self.pub.publish(self.s_num)
-            self.rate.sleep()
             break
+            self.rate.sleep()
             
 
     def clicked(self):
