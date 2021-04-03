@@ -22,7 +22,7 @@ from std_msgs.msg import Float32MultiArray, String
 #FILE_TYPE = "dae"
 FILE_TYPE = "obj"
 
-OUTPUT_DIR = "cache"
+OUTPUT_DIR = os.path.dirname(os.path.realpath(__file__)) + "/" + "cache"
 EARTH_CIRCUMFERENCE = 40075 #km
 
 DEG_PER_KM = 0.0089982311916 #approximation assuming earth perfect sphere
@@ -291,6 +291,7 @@ if __name__ == "__main__":
 
     subscriber = rospy.Subscriber("chunk_coordinate", Float32MultiArray, callback, queue_size=10) #1d arrays of size 2
     rospy.init_node("generation_node")
+    #os.chdir("./src/ECE_573_FINAL_PROJECT")#move us into package, ros starts us off in workspace root ece573_ws
     rospy.spin()
 
     #generate_chunk(TARGET_COORD[0], TARGET_COORD[1])
