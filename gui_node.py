@@ -16,7 +16,7 @@ class MyWindow(QMainWindow):
         self.rate = rospy.Rate(5)
         self.s_num = Float32MultiArray()
         self.s_num.data = []
-        self.pub = rospy.Publisher('/chuck_coordinate', Float32MultiArray, queue_size=10)
+        self.pub = rospy.Publisher('/chunk_coordinate', Float32MultiArray, queue_size=10)
 
         super(MyWindow, self).__init__()
         #self.setGeometry(500, 500, 700, 700)
@@ -43,8 +43,8 @@ class MyWindow(QMainWindow):
                 print("an element ",i, "\n")
             rospy.loginfo(self.s_num)
             self.pub.publish(self.s_num)
-            break
             self.rate.sleep()
+            break
             
 
     def clicked(self):
