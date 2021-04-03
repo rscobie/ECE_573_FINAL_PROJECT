@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<sdf version="1.5">
+  <model name="city">
+    <static>true</static>
+    <link name="city_link">
+      <collision name="city_collision">
+        <geometry>
+          <box>
+            <size>0 0 0</size>
+          </box>
+        </geometry>
+      </collision>     
+      <visual name="city_mesh">
+        <cast_shadows>true</cast_shadows>
+        <geometry>
+          <mesh>
+            <uri>model://city/meshes/model.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

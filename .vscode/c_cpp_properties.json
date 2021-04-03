@@ -1,0 +1,18 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/opt/ros/noetic/include/**",
+        "/mnt/c/Users/Rory/Documents/school/spring_2021/ece_573/ece573_ws/src/backups/ECE_573_FINAL_PROJECT_before_rebase/include/**",
+        "/mnt/c/Users/Rory/Documents/school/spring_2021/ece_573/ece573_ws/src/hw01_scobie_rory/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}
