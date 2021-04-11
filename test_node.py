@@ -7,17 +7,22 @@ from std_msgs.msg import Float32
 class poisson_sub:
     def __init__(self):
         self.listSize = 0
-        self.min = Float32()
         self.rate = rospy.Rate(5)
-        #this subcriver is used for test 4
         self.sub = rospy.Subscriber("/chunk_coordinate", Float32MultiArray, self.callback)
 
-    #call back function handles the data recieved by the publisher node on the topic random_generator    
     def callback(self, data):
+        #testing published values
+        print("Entering callback")
+        #testing for an empty list
         if(len(data.data) == 0):
             raise Exception("Error, one of more coordinate values are missing\n")
-        #rospy.loginfo(self.min)
-        #self.pub2.publish(self.min)
+        #testing for a list containing empty elements
+        else:
+            for items in data.data:
+                print ("value is ", items)
+                if(items == ''):
+                    raise Exception("Error: the published values have a problem")
+
         self.rate.sleep()
 
 if __name__ == '__main__':
