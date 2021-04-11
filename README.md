@@ -49,7 +49,7 @@ Assuming workspace is in the home directory, run
 Add this to your .bashrc file as well to avoid having to do this every time
 a new shell is opened. Now, our ECE_573_FINAL_PROJECT should be runnable using rosrun
 
-## start nodes
+# start nodes
 
 make sure roscore is running first:
 `roscore`
@@ -71,7 +71,10 @@ in another shell.
 
 To start the gui node:
 
-`rosrun ECE_573_FINAL_PROJECT gui_node.py`
+`rosrun ECE_573_FINAL_PROJECT test_node.py`
+
+# run tests
+run the python script `run_tests.py` found in the package's root directory
 
 ## usage
 ### gui node
