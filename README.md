@@ -89,3 +89,6 @@ A zip file (version 1) that contains two packages, where one package is primaril
 
 # simulations_v2.zip:
 The Alpha Release simulation package which holds four worlds. Three of these worlds are test worlds for when a URDF vehicle is made. The osm_1.world is for a 1000x1000 chunk generated from OSM and put into gazebo as a model. The previous version had worlds that were not needed, so they were taken out in this version. One can spawn these test worlds by putting this package into a src folder of a workspace, running a catkin_make, and then typing roslaunch simulation_node_gazebo [name of launch file]. The video will focus on launching osm_1.launch to show that a world chunk was successfully created in gazebo. 
+
+# simulations_v3.zip:
+An updated simulation zip file that includes a simulation_node_description package that has a URDF vehicle model inside it. An extra test world and launch file called vehicle_test was also made to simulate the vehicle in an empty world. One can spawn these test worlds by putting this package into a src folder of a workspace, running a catkin_make, and then typing roslaunch simulation_node_gazebo [name of launch file].  
