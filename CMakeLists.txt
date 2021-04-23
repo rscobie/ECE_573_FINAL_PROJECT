@@ -220,6 +220,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   osm_to_building.py
   gui_node.py
+  simulation_node.py
   test_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

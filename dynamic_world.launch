@@ -1,0 +1,6 @@
+<launch>
+    <node name="simulation_node" pkg="ECE_573_FINAL_PROJECT" type="simulation_node.py" args="" respawn = "true" />
+    <node name="gui_node" pkg="ECE_573_FINAL_PROJECT" type="gui_node.py" args="" respawn = "true" />
+    <node name="generation_node" pkg="ECE_573_FINAL_PROJECT" type="osm_to_building.py" args="" respawn = "true" />
+    <!--<node name="test_node" pkg="ECE_573_FINAL_PROJECT" type="test_node.py.py" args="" respawn = "true" /> -->
+</launch>
