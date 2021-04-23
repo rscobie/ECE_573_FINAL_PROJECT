@@ -4,6 +4,9 @@ from std_msgs.msg import String
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Float32
 import numpy as np
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
+
 
 #from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import * #QApplication, QMainWindow, QPushButton, QVBoxLayout
@@ -13,10 +16,14 @@ class MyWindow(QMainWindow):
     def __init__(self):
         print("Entering mywindow\n")
         rospy.init_node('gui', anonymous=True)
-        self.rate = rospy.Rate(5)
+        self.incVal_Flag = 0
+        self.rate = rospy.Rate(50)
         self.s_num = Float32MultiArray()
         self.s_num.data = []
         self.pub = rospy.Publisher('/chunk_coordinate', Float32MultiArray, queue_size=10)
+        #self.sub = rospy.Subscriber("/prius_diff_drive_controller/odom", Odometry, self.callback)
+        self.sub2 = rospy.Subscriber("/prius_diff_drive_controller/cmd_vel", Twist, self.callback2)
+
 
         super(MyWindow, self).__init__()
         #self.setGeometry(500, 500, 700, 700)
@@ -24,17 +31,8 @@ class MyWindow(QMainWindow):
         self.setWindowTitle("Dynamic World Generator")
         self.b2_flag = 0
         self.initUI()
-
-        
     
     def publishFunct(self):
-        #publishing stuffs
-        #rospy.init_node('gui', anonymous=True)
-        #poisson_pub()
-        
-        #rospy.spin()
-        #self.publishFunct()
-        #self.s_num.data.clear()
         while not rospy.is_shutdown():
             self.s_num.data.append(float(self.latValue))
             self.s_num.data.append(float(self.lonValue))
@@ -45,31 +43,73 @@ class MyWindow(QMainWindow):
             self.pub.publish(self.s_num)
             break
             self.rate.sleep()
-            
+  
+    #def callback(self, data):
+        #print("Entering callback data: ", data)
+     #   count  = 1
+      #  for i in data:
+       #     print("line ", count, ": ", i)
+        #for i in  data.data:
+         #   print(i)
+         
+    def callback2(self, data):
+        #print("Entering callback data: ", data)
+        #print("velosity is ", data.linear.x)
+        print(self.start_flag)
+        if(self.start_flag):
+            self.vel_Box.setText(str(data.linear.x))
+            self.latBox.setText(str(data.angular.x))
+            self.lonBox.setText(str(data.angular.y))
 
+           
     def clicked(self):
-        #self.latBox.delete()
-        #self.lonBox.delete()
-        #self.setGeometry(500, 500, 600, 600)
-        #self.publishFunct()
-
-        self.latValue = self.latBox.text()
-        self.lonValue = self.lonBox.text()
-        self.graphicVal = self.drop_down.currentText()
-
-        print("lat and long and message ", 
-        self.latValue, " ", self.lonValue, " ", self.graphicVal, "\n")
-
-        #self.labelClick.setText("Current Location is below")
-        #self.labelClick.adjustSize()
-        #self.labelClick.setGeometry(250, 250, 300, 25)
-
+        self.start_flag = 1
+        try:
+            self.latValue = self.latBox.text()
+            self.lonValue = self.lonBox.text()
+            self.graphicVal = self.drop_down.currentText()
+        except ValueError:
+            self.latValue = 0
+            self.lonValue = 0
+            self.incVal_Flag = 1
+            print("Incorrects values entered ")
+            self.inc_label = QLabel(self)
+            self.inc_label.setText("Wrong values please try again \n")
+            self.inc_label.setGeometry(250, 250, 400, 400)
 
         #delete curent button
         self.bl.deleteLater()
         self.label2.deleteLater()
         self.drop_down.deleteLater()
         self.label.deleteLater()
+        if(self.incVal_Flag):
+            self.inc_label.deleteLater()
+            incVal_Flag = 0
+        
+        #velocity label
+        self.vel_label = QLabel(self)
+        self.vel_label.setText("Current Velocity ")
+        self.vel_label.setGeometry(250, 150, 300, 25)
+        self.vel_label.show()
+        
+        #velocity box
+        self.vel_Box = QLineEdit(self)
+        self.vel_Box.setPlaceholderText("Velosity")
+        self.vel_Box.setStyleSheet('background-color:white')
+        self.vel_Box.setGeometry(250, 200, 125, 30)
+        self.vel_Box.show()
+
+        #lantidude Label
+        self.lat_label = QLabel(self)
+        self.lat_label.setText("Latitude")
+        self.lat_label.setGeometry(250, 250, 125, 25)
+        self.lat_label.show()
+
+        #longitude label
+        self.lon_label = QLabel(self)
+        self.lon_label.setText("Langitude")
+        self.lon_label.setGeometry(400, 250, 125, 25)
+        self.lon_label.show()
 
         self.b2 = QPushButton(self)
         self.b2.setText("Stop")
@@ -80,14 +120,18 @@ class MyWindow(QMainWindow):
         self.b2_flag = 1
         self.publishFunct()
 
-
-
     def initUI(self):
         self.setGeometry(500, 500, 700, 700)
+        self.start_flag = 0
         #self.grid = QGridLayout()
 
         if(self.b2_flag):
             self.b2.deleteLater()
+            self.vel_Box.deleteLater()
+            self.vel_label.deleteLater()
+            self.lat_label.deleteLater()
+            self.lon_label.deleteLater()
+            self.lat_label.deleteLater()
             self.b2_flag = 0
 
         #set message lable
@@ -102,6 +146,7 @@ class MyWindow(QMainWindow):
         #self.qBox.setStyleSheet('background-color:white')
         #self.qBox.setGeometry(250, 200, 125, 30)
 
+        #quality drop down option
         self.drop_down = QComboBox(self)
         item_list = ["ok", "good", "excellent"]
         self.drop_down.setStyleSheet('background-color:white')
@@ -114,18 +159,21 @@ class MyWindow(QMainWindow):
         self.label.setText("Please Enter Latitude and Longitude: ")
         self.label.adjustSize()
         self.label.setGeometry(250, 250, 300, 25)
+        self.label.show()
 
         #create latitude input box
         self.latBox = QLineEdit(self)
         self.latBox.setPlaceholderText("Enter Latitude")
         self.latBox.setStyleSheet('background-color:white')
         self.latBox.setGeometry(250, 300, 125, 30)
+        self.latBox.show()
 
         #create longitude input box
         self.lonBox = QLineEdit(self)
         self.lonBox.setPlaceholderText("Enter Longitude")
         self.lonBox.setStyleSheet('background-color:white')
         self.lonBox.setGeometry(400, 300, 125, 30)
+        self.lonBox.show()
         
         #create start button
         self.bl = QPushButton(self)
@@ -135,13 +183,6 @@ class MyWindow(QMainWindow):
         self.bl.setGeometry(250, 350, 100, 50)
         self.bl.show()
         
-
-        #grid.addWidget(label, 1, 0)
-        #grid.addWidget(latBox, 1, 1)
-        #grid.addWidget(lonBox, 2, 0)
-        #grid.addWidget(bl, 2, 1)
-
-
 def window():
     
     app = QApplication(sys.argv)
@@ -153,9 +194,6 @@ def window():
 if __name__ == '__main__':
     try:
         window()
-        #rospy.init_node('gui', anonymous=True)
-        #poisson_pub()
-        #rospy.spin()
     except rospy.ROSInterruptException:
         pass
     
