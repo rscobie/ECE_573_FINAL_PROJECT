@@ -95,7 +95,7 @@ class MyWindow(QMainWindow):
         
         #velocity box
         self.vel_Box = QLineEdit(self)
-        self.vel_Box.setPlaceholderText("Velosity")
+        self.vel_Box.setPlaceholderText("Velocity")
         self.vel_Box.setStyleSheet('background-color:white')
         self.vel_Box.setGeometry(250, 200, 125, 30)
         self.vel_Box.show()
@@ -108,7 +108,7 @@ class MyWindow(QMainWindow):
 
         #longitude label
         self.lon_label = QLabel(self)
-        self.lon_label.setText("Langitude")
+        self.lon_label.setText("Longitude")
         self.lon_label.setGeometry(400, 250, 125, 25)
         self.lon_label.show()
 
