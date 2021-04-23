@@ -55,7 +55,7 @@ class MyWindow(QMainWindow):
          
     def callback2(self, data):
         #print("Entering callback data: ", data)
-        #print("velosity is ", data.linear.x)
+        #print("velocity is ", data.linear.x)
         print(self.start_flag)
         if(self.start_flag):
             self.vel_Box.setText(str(data.linear.x))
@@ -100,7 +100,7 @@ class MyWindow(QMainWindow):
         self.vel_Box.setGeometry(250, 200, 125, 30)
         self.vel_Box.show()
 
-        #lantidude Label
+        #latidude Label
         self.lat_label = QLabel(self)
         self.lat_label.setText("Latitude")
         self.lat_label.setGeometry(250, 250, 125, 25)
