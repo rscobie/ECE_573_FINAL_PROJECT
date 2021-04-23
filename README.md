@@ -70,6 +70,9 @@ Note: originally colors were saved per-vertex. However, Gazebo doesn't support t
 ### simulation node
 Publish a String with the path of the chunk to add to the simulation on the chunk_path topic. The chunk will then be loaded into gazebo
 
+# URDF:
+The URDF vehicle model was made using joints, links and transmissions to the joints. These transmissions go to the controllers in the config folder, which contains three .yaml files that control the movement of the vehicle. The launch file vehicle_test.launch includes the URDF, an empty world, and all controllers, with an rqt gui to move the vehicle, and a basic node to publish the controllers.
+
 # Spawning Vehicle:
 A launch file called vehicle_test.launch will spawn the vehicle in an empty world for testing purposes. Just type the command: roslaunch ECE_573_FINAL_PROJECT vehicle_test.launch to show the URDF model in gazebo. Currently movement, sensors and other implementations are being modified on the vehicle, which is why it is in this test world. Once the vehicle modifications are complete, it will be put in the dynamic world.
 
