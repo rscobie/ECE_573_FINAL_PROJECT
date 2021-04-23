@@ -41,6 +41,7 @@ class MyWindow(QMainWindow):
                 print("an element ",i, "\n")
             rospy.loginfo(self.s_num)
             self.pub.publish(self.s_num)
+            self.s_num.data = list()
             break
             self.rate.sleep()
   

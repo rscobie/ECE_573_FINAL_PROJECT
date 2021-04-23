@@ -51,9 +51,9 @@ def chunk_path_callback(path):
   NEW_MESH_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "models"
   #move mesh file over
   os.system(f"cp {OLD_MESH_PATH} {NEW_MESH_PATH}/{MODEL_NAME}")
-  #also copy material/texture over
-  os.system(f"cp {OLD_MODEL_DIR}/{MAT_NAME} {NEW_MESH_PATH}/{MAT_NAME}")
-  os.system(f"cp {OLD_MODEL_DIR}/{TEX_NAME} {NEW_MESH_PATH}/{TEX_NAME}")
+  #also copy material/texture over #TODO: commented out for now while texture generation WIP
+  # os.system(f"cp {OLD_MODEL_DIR}/{MAT_NAME} {NEW_MESH_PATH}/{MAT_NAME}")
+  # os.system(f"cp {OLD_MODEL_DIR}/{TEX_NAME} {NEW_MESH_PATH}/{TEX_NAME}")
   #make sdf file
   sdf_file = open(f"{NEW_MESH_PATH}/{COORDINATES}.sdf", "w")
   sdf_file.write(sdf_text)

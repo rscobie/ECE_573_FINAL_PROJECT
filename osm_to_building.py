@@ -120,6 +120,9 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
             for vertex in mesh.vertices:
                 colors.append((255,0,0))#red
             visual = trimesh.visual.color.ColorVisuals(mesh=mesh, vertex_colors=colors)
+            #visual = visual.to_texture() #TODO: this function doesn't seem to work, need to make textures by hand
+            #temp_mat = trimesh.visual.material.empty_material(color=(255,0,0))
+            #visual = trimesh.visual.texture.TextureVisuals(material=temp_mat)
             mesh.visual = visual
             name = "unnamed"
             try:
@@ -166,7 +169,10 @@ def gen_elevation(south_bound, west_bound, north_bound, east_bound):
             triangles.append( ( (i+1)*elevations.shape[1] + j + 1,i*elevations.shape[1] + j+1,i*elevations.shape[1] + j ) )
             triangles.append( ( (i+1)*elevations.shape[1] + j, (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j ) )
 
+    #temp_mat = trimesh.visual.material.empty_material(color=(0,255,0))
     terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles, vertex_colors=colors)
+    #terrain_mesh.visual = terrain_mesh.visual.to_texture() #TODO: this function doesn't seem to work, need to make textures by hand
+    #terrain_mesh.visual = trimesh.visual.texture.TextureVisuals(material=temp_mat)
     #terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
     #my_scene.add_geometry(terrain_mesh)
     #terrain_mesh.show()
@@ -256,6 +262,9 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
                 triangles.append( (4*i + 0, 4*i + 2, 4*i + 3) )
 
             mesh = trimesh.base.Trimesh(vertices=points, faces=triangles,vertex_colors=colors)
+            #mesh.visual = mesh.visual.to_texture() #TODO: this function doesn't seem to work, need to make textures by hand
+            #temp_mat = trimesh.visual.material.empty_material(color=(0,0,0))
+            #mesh.visual = trimesh.visual.texture.TextureVisuals(material=temp_mat)
             chunk_model = trimesh.util.concatenate((chunk_model,mesh))
             #mesh.show()
             #road_scene.add_geometry(mesh)
@@ -275,9 +284,9 @@ def generate_chunk(lat,lon):
     chunk_model = gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     chunk_model = gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
     model_path = f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}"
-    chunk_model.visual = chunk_model.visual.to_texture()#gazebo can't see vertex colors, so save as texture
+    #chunk_model.visual = chunk_model.visual.to_texture()#gazebo can't see vertex colors, so save as texture
     chunk_model.export(model_path)
-    chunk_model.show()
+    #chunk_model.show()
     return model_path
 
 if __name__ == "__main__":
@@ -303,5 +312,4 @@ if __name__ == "__main__":
     TODO: elevation locations off by 1 sample (30m) in both directions, currently a workaround in place
     TODO: some building formats not supported, messes up parsing of coordinate data
     TODO: find elegent way to cut off ways (buildings/roads) that are partially outside of terrain bounds (left in place for now, using last known elevation)
-    ***TODO: wrap up in ROS node, add topics that take commands, send file paths for models
     """

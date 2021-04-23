@@ -58,7 +58,7 @@ to launch the project in its entirety, run
 `roslaunch ECE_573_FINAL_PROJECT dynamic_world.launch`
 
 # run tests
-run the python script `run_tests.py` found in the package's root directory
+do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
 
 ## usage
 ### gui node
