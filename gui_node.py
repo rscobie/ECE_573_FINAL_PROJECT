@@ -6,7 +6,7 @@ from std_msgs.msg import Float32
 import numpy as np
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
-
+import os
 
 #from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import * #QApplication, QMainWindow, QPushButton, QVBoxLayout
@@ -193,6 +193,8 @@ def window():
 
 
 if __name__ == '__main__':
+    URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
+    os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -z 1 -model prius")
     try:
         window()
     except rospy.ROSInterruptException:
