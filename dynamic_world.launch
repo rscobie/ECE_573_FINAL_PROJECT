@@ -2,5 +2,31 @@
     <node name="simulation_node" pkg="ECE_573_FINAL_PROJECT" type="simulation_node.py" args="" respawn = "true" />
     <node name="gui_node" pkg="ECE_573_FINAL_PROJECT" type="gui_node.py" args="" respawn = "true" />
     <node name="generation_node" pkg="ECE_573_FINAL_PROJECT" type="osm_to_building.py" args="" respawn = "true" />
+    <arg name="model" default="$(find ECE_573_FINAL_PROJECT)/urdf/prius.urdf"/>
+  
+    <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+    
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+  
+    <rosparam command="load"
+              file="$(find ECE_573_FINAL_PROJECT)/config/joints1.yaml"
+              ns="prius_joint_state_controller" />
+    <rosparam command="load"
+              file="$(find ECE_573_FINAL_PROJECT)/config/steering.yaml"
+              ns="prius_steering_controller" />
+    <rosparam command="load"
+              file="$(find ECE_573_FINAL_PROJECT)/config/diffdrive1.yaml"
+              ns="prius_diff_drive_controller" />
+  
+    <node name="prius_controller_spawner" pkg="controller_manager" type="spawner"
+      args="prius_joint_state_controller
+            prius_steering_controller
+            prius_diff_drive_controller"/>
+          
+    <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
+      <param name="default_topic" value="/prius_diff_drive_controller/cmd_vel"/>
+    </node>
     <!--<node name="test_node" pkg="ECE_573_FINAL_PROJECT" type="test_node.py.py" args="" respawn = "true" /> -->
 </launch>
