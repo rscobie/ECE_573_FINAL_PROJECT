@@ -6,6 +6,7 @@ from numpy.lib.function_base import meshgrid
 import trimesh
 from shapely.geometry.polygon import Polygon
 from OSMPythonTools.overpass import Overpass
+from trimesh.base import Trimesh
 from trimesh.transformations import translation_matrix #Use overpy if we want JSON instead (might be faster)
 import elevation
 from osgeo import gdal
@@ -13,24 +14,23 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from PIL import Image, ImageDraw
+import networkx as nx
 
 import rospy
 from std_msgs.msg import Float32MultiArray, String
 
-#FILE_TYPE = "stl"
-#FILE_TYPE = "ply" #using this now since it preserves colors/textures and scale
-#FILE_TYPE = "dae"
 FILE_TYPE = "obj"
 
-OUTPUT_DIR = os.path.dirname(os.path.realpath(__file__)) + "/" + "cache"
+OUTPUT_DIR = os.path.dirname(os.path.realpath(__file__)) + "/models/chunks"
 EARTH_CIRCUMFERENCE = 40075 #km
 
 DEG_PER_KM = 0.0089982311916 #approximation assuming earth perfect sphere
 
-#TARGET_COORD=(32.2319,-110.9501) # U of A
+TARGET_COORD=(32.2319,-110.9501) # U of A
 #TARGET_COORD=(32.4387,-110.7598) # Summerhaven
 #TARGET_COORD=(44.0717157763241, 7.254062280821728) # saint-martin-vesubie, France
-TARGET_COORD=(43.73930237228949, 7.420153277183919)#Monaco
+#TARGET_COORD=(43.73930237228949, 7.420153277183919)#Monaco
 
 TARGET_RADIUS=0.48 # km from center point, square. Should be multiple of 0.03 due to elevation dataset resolution
 
@@ -38,10 +38,7 @@ DEFAULT_BUILDING_HEIGHT = 0.006 #6 meters
 
 ROAD_OFFSET = 0.0005 #roads will hover half a meter off the ground to avoid clipping in dramatic terrain
 
-# def coord_to_xy(lat, lon): #in km
-#     x = (TARGET_RADIUS*2)*(180+lon)/360
-#     y = (TARGET_RADIUS*2)*(90-lat)/180
-#     return(x,y)
+TEXTURE_RESOLUTION = 1000 #per kilometer
 
 def km_to_deg(km):
     return km*DEG_PER_KM
@@ -67,16 +64,10 @@ def get_elevation(coord,elevations):
         y_index = 0
     return elevations[x_index, y_index]
 
-#debug
-my_scene = trimesh.scene.scene.Scene()
-
 #******************************
 #get buildings
 #******************************
-def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
-    #debug
-    #global my_scene
-
+def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, vertices, faces, uvs, texture):
     overpass = Overpass()
     #query location #Note: overpass takes bounding box as (south,west,north,east)
     building_result = overpass.query(f"""
@@ -86,20 +77,23 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
     way(r)[!"building:part"];
     out geom;
     """)
-    try:
-        os.mkdir(OUTPUT_DIR)
-    except FileExistsError:
-        pass
-    #building_scene = trimesh.scene.scene.Scene()
+    tex_drawer = ImageDraw.Draw(texture)
     for element in building_result.elements():
         if element.type() == "way":
             coordinates = None
             try:
                 coordinates = element.geometry()["coordinates"][0]
                 coordinates.append(coordinates[0])
-                coordinates = [[deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)] for coord in coordinates]
+                coordinates = [(deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)) for coord in coordinates]
             except TypeError:
                 continue # throw out building is formatting problem #TODO: come up with more graceful solution
+            
+            #update texture
+            pixel_coords = list()
+            for coord in coordinates:
+                pixel_coords.append((coord[0]*TEXTURE_RESOLUTION,coord[1]*TEXTURE_RESOLUTION))
+            tex_drawer.polygon(pixel_coords, fill=(255,0,0))
+            
             poly = Polygon(coordinates)
             mesh = trimesh.creation.extrude_polygon(poly, height=DEFAULT_BUILDING_HEIGHT)
             
@@ -115,39 +109,21 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
             for i in range(len(mesh.vertices)):
                 mesh.vertices[i][2] += min_elevation
             
-            colors = list() #vertex colors
-            #apply colors
+            #concatenate to chunk
+            old_index = len(vertices)
+            vertices.extend(mesh.vertices)
+            faces.extend([[y + old_index for y in x] for x in mesh.faces])
+            
+            #add uvs for buildings
             for vertex in mesh.vertices:
-                colors.append((255,0,0))#red
-            visual = trimesh.visual.color.ColorVisuals(mesh=mesh, vertex_colors=colors)
-            #visual = visual.to_texture() #TODO: this function doesn't seem to work, need to make textures by hand
-            #temp_mat = trimesh.visual.material.empty_material(color=(255,0,0))
-            #visual = trimesh.visual.texture.TextureVisuals(material=temp_mat)
-            mesh.visual = visual
-            name = "unnamed"
-            try:
-                tags = element.tags()
-                if tags != None:
-                    name = tags['name']
-            except KeyError:
-                pass
+                uvs.append((vertex[0]/(texture.size[0]/TEXTURE_RESOLUTION),vertex[1]/(texture.size[0]/TEXTURE_RESOLUTION)))
 
-            chunk_model = trimesh.util.concatenate((chunk_model,mesh))
-            #mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
-            #building_scene.add_geometry(mesh)
-            #my_scene.add_geometry(mesh)
-            #x,y = zip(*coordinates)
-            #plt.plot(x,y)
-    #building_scene.show()
-    #plt.show()
-    return chunk_model
+    return vertices, faces, uvs, texture
 
 #******************************
 #get elevation
 #******************************
-def gen_elevation(south_bound, west_bound, north_bound, east_bound):
-    #debug
-    #global my_scene
+def gen_elevation(south_bound, west_bound, north_bound, east_bound): #TODO: query an extra 30 meters on each side
     #get file from internet (of from local cache)
     file_name = f"{south_bound}_{west_bound}_{north_bound}_{east_bound}.tif"
     elevation.clip(bounds=(west_bound, south_bound, east_bound, north_bound),output=file_name,cache_dir=OUTPUT_DIR)
@@ -157,33 +133,29 @@ def gen_elevation(south_bound, west_bound, north_bound, east_bound):
     #generate mesh
     points = list()
     triangles = list()
-    colors = list()#per vertex
+    uvs = list()
+    #colors = list()#per vertex
     #generate vertices
     for i in range(elevations.shape[0]):
         for j in range(elevations.shape[1]):
             points.append((2*TARGET_RADIUS*i/elevations.shape[0], 2*TARGET_RADIUS*j/elevations.shape[1], elevations[i][j]/1000) )
-            colors.append((0,255,0))#green
+            uvs.append((i/(elevations.shape[0]-1),j/(elevations.shape[1]-1)))#TODO: check for empty elevations list edge case?
+            #colors.append((0,255,0))#green
     #generate faces
     for i in range(elevations.shape[0] - 1):
         for j in range(elevations.shape[1] -1):
             triangles.append( ( (i+1)*elevations.shape[1] + j + 1,i*elevations.shape[1] + j+1,i*elevations.shape[1] + j ) )
             triangles.append( ( (i+1)*elevations.shape[1] + j, (i+1)*elevations.shape[1] + j+1, i*elevations.shape[1] + j ) )
+    tex_res = int(TEXTURE_RESOLUTION*0.03*elevations.shape[0])#actual resolution of this image given spatial size
+    texture = Image.new('RGB', (tex_res,tex_res), (0,255,0))
+    #terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles, vertex_colors=colors)
 
-    #temp_mat = trimesh.visual.material.empty_material(color=(0,255,0))
-    terrain_mesh = trimesh.base.Trimesh(vertices=points,faces=triangles, vertex_colors=colors)
-    #terrain_mesh.visual = terrain_mesh.visual.to_texture() #TODO: this function doesn't seem to work, need to make textures by hand
-    #terrain_mesh.visual = trimesh.visual.texture.TextureVisuals(material=temp_mat)
-    #terrain_mesh.export(f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}")
-    #my_scene.add_geometry(terrain_mesh)
-    #terrain_mesh.show()
-    return elevations, terrain_mesh
+    return elevations, points, triangles, uvs, texture#terrain_mesh
 
 #******************************
 #get roads
 #******************************
-def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model):
-    #debug
-    #global my_scene
+def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, vertices, faces, uvs, texture):
     overpass = Overpass()
     #query location #Note: overpass takes bounding box as (south,west,north,east)
     road_result = overpass.query(f"""
@@ -201,27 +173,17 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
     out geom;
 
     """)
-    try:
-        os.mkdir(OUTPUT_DIR)
-    except FileExistsError:
-        pass
-    road_scene = trimesh.scene.scene.Scene()
+    
+    road_graph = nx.Graph()
+    tex_drawer = ImageDraw.Draw(texture)
+
     for element in road_result.elements():
         if element.type() == "way":
             coordinates = np.asarray(element.geometry()["coordinates"]).squeeze().tolist()
-            coordinates = [[deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)] for coord in coordinates]
+            coordinates = [(deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)) for coord in coordinates]
 
-            #cut roads that go out of bounds short
+            #TODO: cut roads that go out of bounds short
             temp_coords = list()
-            # for coordinate in coordinates:
-            #     if coordinate[0] < 0:
-            #         coordinate[0] = 0
-            #     if coordinate[0] > 2*(TARGET_RADIUS - 0.03): #TODO: the -0.03 is a temporary solution while the off-by-1 elevation bug is investigated
-            #         coordinate[0] = 2*(TARGET_RADIUS - 0.03)
-            #     if coordinate[1] < 0:
-            #         coordinate[1] = 0
-            #     if coordinate[1] > 2*(TARGET_RADIUS - 0.03):
-            #         coordinate[1] = 2*(TARGET_RADIUS - 0.03)
 
             name = "unnamed"
             try:
@@ -231,63 +193,54 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chun
             except KeyError:
                 pass
             x,y = zip(*coordinates)
-            #make meshes from roads
-            points=list()
-            triangles=list()
-            colors=list()#vertex colors
-            for i in range(len(x) - 1):
-                #find perpendicular points
-                u = (x[i] - x[i+1],y[i] - y[i+1])#road vector
-                length = 0
-                if u[0] == 0 and u[1] == 0:#TODO: temporary fix while the off-by-1 elevation bug investigated
-                    length = 0
-                else:
-                    length = 0.005/math.sqrt(u[0]**2+u[1]**2) #make points 5 meters away from road center
-                v1 = (-1*u[1]*length,u[0]*length)
-                v2 = (u[1]*length,-1*u[0]*length)
-                points.append( (x[i]+v1[0],y[i]+v1[1], get_elevation([x[i]+v1[0],y[i]+v1[1]], elevations)/1000 + ROAD_OFFSET) )
-                points.append( (x[i]+v2[0],y[i]+v2[1], get_elevation([x[i]+v2[0],y[i]+v2[1]], elevations)/1000 + ROAD_OFFSET) )
-                points.append( (x[i+1]+v1[0],y[i+1]+v1[1], get_elevation([x[i+1]+v1[0],y[i+1]+v1[1]], elevations)/1000 + ROAD_OFFSET) )
-                points.append( (x[i+1]+v2[0],y[i+1]+v2[1], get_elevation([x[i+1]+v2[0],y[i+1]+v2[1]], elevations)/1000 + ROAD_OFFSET) )
-                colors.append((0,0,0))#black
-                colors.append((0,0,0))#black
-                colors.append((0,0,0))#black
-                colors.append((0,0,0))#black
-            for i in range(len(x) - 1):
-                triangles.append( (4*i + 0, 4*i + 1, 4*i + 3) )
-                triangles.append( (4*i + 0, 4*i + 3, 4*i + 2) )
-                #add second set of triangles with opposite surface normals, to avoid
-                #accidental invisible roads
-                triangles.append( (4*i + 0, 4*i + 3, 4*i + 1) )
-                triangles.append( (4*i + 0, 4*i + 2, 4*i + 3) )
 
-            mesh = trimesh.base.Trimesh(vertices=points, faces=triangles,vertex_colors=colors)
-            #mesh.visual = mesh.visual.to_texture() #TODO: this function doesn't seem to work, need to make textures by hand
-            #temp_mat = trimesh.visual.material.empty_material(color=(0,0,0))
-            #mesh.visual = trimesh.visual.texture.TextureVisuals(material=temp_mat)
-            chunk_model = trimesh.util.concatenate((chunk_model,mesh))
-            #mesh.show()
-            #road_scene.add_geometry(mesh)
-            #my_scene.add_geometry(mesh)
-            #mesh.export(f"{OUTPUT_DIR}/{name}_{element.id()}.{FILE_TYPE}")
-            #plt.plot(x,y)
-    #road_scene.show()
-    #plt.show()
-    return chunk_model
+            #paint roads onto texture
+            pixel_coords = list()
+            for coord in coordinates:
+                pixel_coords.append((coord[0]*TEXTURE_RESOLUTION,coord[1]*TEXTURE_RESOLUTION))
+            tex_drawer.line(pixel_coords, fill=(0,0,0), width=int(TEXTURE_RESOLUTION/100))#TODO: do I need to discretize this?
+            #add roads to graph
+            for i in range(len(x) - 1):
+                elev1 = get_elevation([x[i],y[i]], elevations)/1000
+                elev2 = get_elevation([x[i+1],y[i+1]], elevations)/1000
+                road_graph.add_edge( (x[i],y[i],elev1),(x[i+1],y[i+1],elev2), weight=math.sqrt( (x[i] - x[i+1])**2 + (y[i] - y[i+1])**2 ) )#weighted edge to destination
+
+    #TODO: process graph to combine nearby nodes, add nodes at intersections of lines, etc.
+    return road_graph, vertices, faces, uvs, texture#chunk_model
 
 def generate_chunk(lat,lon):
+    try:
+        os.mkdir(OUTPUT_DIR)
+    except FileExistsError:
+        pass
+
     south_bound = round(lat - km_to_deg(TARGET_RADIUS),4)
     north_bound = round(lat + km_to_deg(TARGET_RADIUS),4)
     east_bound = round(lon + km_to_deg(TARGET_RADIUS),4)
     west_bound = round(lon - km_to_deg(TARGET_RADIUS),4)
-    elevations, chunk_model = gen_elevation(south_bound, west_bound, north_bound, east_bound)
-    chunk_model = gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
-    chunk_model = gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, chunk_model)
-    model_path = f"{OUTPUT_DIR}/{south_bound}_{west_bound}_{north_bound}_{east_bound}.{FILE_TYPE}"
-    #chunk_model.visual = chunk_model.visual.to_texture()#gazebo can't see vertex colors, so save as texture
+    elevations, vertices, faces, uvs, texture = gen_elevation(south_bound, west_bound, north_bound, east_bound)
+    vertices, faces, uvs, texture = gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, vertices, faces, uvs, texture)
+    road_graph, vertices, faces, uvs, texture = gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, vertices, faces, uvs, texture)
+    
+    #flip image since pillow coordinate system different
+    texture = texture.transpose(Image.FLIP_TOP_BOTTOM)
+    tex_vis = trimesh.visual.texture.TextureVisuals(uv=uvs,image=texture)
+    chunk_model = trimesh.base.Trimesh(vertices=vertices,faces=faces,visual=tex_vis)
+    
+    chunk_name = f"{south_bound}_{west_bound}_{north_bound}_{east_bound}"
+    model_dir = f"{OUTPUT_DIR}/{chunk_name}"
+    try:
+        os.mkdir(model_dir)
+    except FileExistsError:
+        pass
+    model_path = f"{model_dir}/{chunk_name}.{FILE_TYPE}"
+    graph_path = f"{model_dir}/{chunk_name}.{'roads'}"
+    
+    fp = open(graph_path, "w")
+    fp.close()
+    nx.readwrite.gpickle.write_gpickle(road_graph, graph_path)
     chunk_model.export(model_path)
-    #chunk_model.show()
-    return model_path
+    return chunk_name
 
 if __name__ == "__main__":
     publisher = rospy.Publisher("chunk_path", String, queue_size=10)
@@ -303,9 +256,6 @@ if __name__ == "__main__":
     rospy.init_node("generation_node")
     #os.chdir("./src/ECE_573_FINAL_PROJECT")#move us into package, ros starts us off in workspace root ece573_ws
     rospy.spin()
-
-    #generate_chunk(TARGET_COORD[0], TARGET_COORD[1])
-    #my_scene.show()
 
     """
     TODO: refactor: clean up magic numbers (to be more explicit with units), add function to get single elevation at point

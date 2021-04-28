@@ -52,3 +52,5 @@ CATKIN_IGNORE
 
 building_models/*
 cache/*
+models/chunks/*
+models/chunks
