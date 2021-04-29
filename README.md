@@ -79,21 +79,25 @@ TODO: add images and elaborate further
 
 * From here, enter the desired starting coordinates. A good example is (32.2319,-110.9501), the U of A campus. Then press Start as shown below:
 
-![Created GUI](Screenshot from 2021-04-29 15-55-42.png)
+![Created GUI](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 15-55-42.png)
+Format: ![Alt Text](url)
 
 * Wait a bit (can be a few minutes depending on server load). Once the generation is complete, you should see two new models in the model list on gazebo. One of these is the prius, the other is the terrain. Right click on the terrain and select "move to". You should now be able to see the terrain. An image of the terrain and vehicle for these coordinates is shown below:
 
-![World Chunk and Vehicle](Screenshot from 2021-04-29 16-02-16.png)
+![World Chunk and Vehicle](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 16-02-16.png)
+Format: ![Alt Text](url)
 
 * A new window should also have opened up. This allows control of the vehicle using rqt steering as seen below:
 
-![RQT Steering GUI](Screenshot from 2021-04-29 16-02-30.png)
+![RQT Steering GUI](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 16-02-30.png)
+Format: ![Alt Text](url)
 
 * Using this new window, you can move the car forward, backward, and steer left and right.
 
 * This prius URDF also has a vehicle gps sensor added onto it, which shows the current gazebo gps coordinates of the vehicle and these coordinates change based on where the vehicle is on the chunk. Simply open a new terminal after the chunk and vehicle have and if the correct plugins are installed, which is in the installation section, then one can run the commands shown below:
 
-![GPS Commands](Screenshot from 2021-04-29 16-04-34.png)
+![GPS Commands](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 16-04-34.png)
+Format: ![Alt Text](url)
 
 # running tests
 do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
