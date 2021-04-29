@@ -74,7 +74,7 @@ do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
 
 ## usage
 ### gui node
-Enter the desired Latitude and Longitude in the appropriate box, then press Start. After this, the latitude, longitude, and velocity boxes will dynamically change their values. 
+Enter the desired Latitude and Longitude in the appropriate box, then press Start. After this, the latitude, longitude, and velocity boxes will dynamically change their values.
 ### generation node
 Publish a Float32MultiArray with format [latitude, longitude] to the chunk_coordinate topic. The output .obj file will be found under ECE_573_FINAL_PROJECT/cache with a name indicated its north, south, east, and west bounds in degrees. 
 
@@ -87,6 +87,9 @@ The URDF vehicle model was made using joints, links and transmissions to the joi
 
 # Spawning Vehicle:
 A launch file called vehicle_test.launch will spawn the vehicle in an empty world for testing purposes. Just type the command: roslaunch ECE_573_FINAL_PROJECT vehicle_test.launch to show the URDF model in gazebo. Currently movement, sensors and other implementations are being modified on the vehicle, which is why it is in this test world. The vehicle still needs modifications, but is now included in dynamic_world.launch.
+
+#rqt gui:
+After gazebo launches, the rqt gui will pop up and will display the options of changing the vehicle's velocity and rotation. After pressing either of the button options in the gui, the car will move or rotate at the specified speed. Also, the specified velocity and rad/s will will be displayd to the user.
 
 # simulations_v1.zip:
 A zip file (version 1) that contains two packages, where one package is primarily used for now (simulation_node_gazebo). This package has sdf models of three main environments the group wants to test the vehicle in (neighborhood, city block, freeway). To use these packages, put them in any workspace of choice, in the src directory, then run a catkin_make on that workspace. Use roslaunch simulation_node_gazebo [launch file you want to run] to make gazebo spawn the world with the model area in that world. There are two test worlds and launch files that are just showing the beginnings of figuring out how to spawn models in gazebo. Test 1 could not be included in github because that test included a tutorial urdf model from the github repository that was too big to include. The world consisted of the urdf file, a generated model from gazebo and a chair model from 3DWarehouse to show that they could all be included together. test2.launch will just launch the 3DWarehouse chair model found to show that an sdf model can be put into gazebo. The other launch files are self explanatory, generating the name that's on the launch file into gazebo.
