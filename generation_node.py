@@ -38,7 +38,7 @@ DEFAULT_BUILDING_HEIGHT = 0.006 #6 meters
 
 ROAD_OFFSET = 0.0005 #roads will hover half a meter off the ground to avoid clipping in dramatic terrain
 
-TEXTURE_RESOLUTION = 1000 #per kilometer
+TEXTURE_RESOLUTION = 10000 #per kilometer
 
 def km_to_deg(km):
     return km*DEG_PER_KM

@@ -63,6 +63,8 @@ make sure roscore is running first:
 to launch the project in its entirety, run
 `roslaunch ECE_573_FINAL_PROJECT dynamic_world.launch`
 
+Note that at the moment, the gazebo simulation will continue to run even if the client window is closed. If the application needs to be closed and reopened, errors may occur due to the car already being spawned, and existing chunks from the last session still being present. For best results, delete all models before closing the simulaton.
+
 # run tests
 do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
 
