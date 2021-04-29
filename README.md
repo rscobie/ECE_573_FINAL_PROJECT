@@ -62,7 +62,7 @@ run the python script `run_tests.py` found in the package's root directory
 
 ## usage
 ### gui node
-Enter the desired Latitude and Longitude in the appropriate box, then press Start
+Enter the desired Latitude and Longitude in the appropriate box, then press Start. After this, the latitude, longitude, and velocity boxes will dynamically change their values. 
 ### generation node
 Publish a Float32MultiArray with format [latitude, longitude] to the chunk_coordinate topic. The output .obj file will be found under ECE_573_FINAL_PROJECT/cache with a name indicated its north, south, east, and west bounds in degrees. 
 
