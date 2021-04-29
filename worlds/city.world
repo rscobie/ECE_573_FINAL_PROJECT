@@ -10,7 +10,7 @@
     <include>
       <uri>model://city</uri>
       <name>city</name>
-      <pose>0 0 0 0 0 0</pose>
+      <pose>10.1 -31 0 0 0 0</pose>
     </include>  
   </world>
 </sdf>
