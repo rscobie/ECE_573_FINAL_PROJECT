@@ -96,3 +96,6 @@ The Alpha Release simulation package which holds four worlds. Three of these wor
 
 # simulations_v3.zip:
 An updated simulation zip file that includes a simulation_node_description package that has a URDF vehicle model inside it. An extra test world and launch file called vehicle_test was also made to simulate the vehicle in an empty world. One can spawn these test worlds by putting this package into a src folder of a workspace, running a catkin_make, and then typing roslaunch simulation_node_gazebo [name of launch file].  
+
+# Test Worlds
+The three test worlds (neighborhood, city, freeway) now have the URDF vehicle in them. To move the vehicle around in these worlds, use the rqt steering GUI. Testing in these three worlds has been done to make sure the vehicle and sensors are working properly.
