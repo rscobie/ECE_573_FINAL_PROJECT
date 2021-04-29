@@ -30,6 +30,14 @@ def chunk_path_callback(chunk_name):
                             <scale>1000 1000 1000</scale>
                         </mesh>
                     </geometry>
+                        <surface>
+                            <friction>
+                                <ode>
+                                    <mu>0.99</mu>
+                                    <mu2>0.99</mu2>
+                                </ode>
+                            </friction>
+                        </surface>
                 </collision>     
                 <visual name="m1">
                     <cast_shadows>true</cast_shadows>

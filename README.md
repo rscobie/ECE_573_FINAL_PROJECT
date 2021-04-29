@@ -78,18 +78,18 @@ TODO: add images and elaborate further
 * First, follow the instructions listed above in the "start nodes" section. Two windows should open, one window being an empty world in gazebo and another is the GUI that was made to enter the starting coordinates.
 
 * From here, enter the desired starting coordinates. A good example is (32.2319,-110.9501), the U of A campus. Then press Start as shown below:
-![](Screenshot from 2021-04-29 15-55-42.png)
+![](screenshot_1.png)
 
 * Wait a bit (can be a few minutes depending on server load). Once the generation is complete, you should see two new models in the model list on gazebo. One of these is the prius, the other is the terrain. Right click on the terrain and select "move to". You should now be able to see the terrain. An image of the terrain and vehicle for these coordinates is shown below:
-![](Screenshot from 2021-04-29 16-02-16.png)
+![](screenshot_2.png)
 
 * A new window should also have opened up. This allows control of the vehicle using rqt steering as seen below:
-![](Screenshot from 2021-04-29 16-02-30.png)
+![](screenshot_3.png)
 
 * Using this new window, you can move the car forward, backward, and steer left and right.
 
 * This prius URDF also has a vehicle gps sensor added onto it, which shows the current gazebo gps coordinates of the vehicle and these coordinates change based on where the vehicle is on the chunk. Simply open a new terminal after the chunk and vehicle have and if the correct plugins are installed, which is in the installation section, then one can run the commands shown below:
-![](Screenshot from 2021-04-29 16-04-34.png)
+![](screenshot_4.png)
 
 # running tests
 do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests

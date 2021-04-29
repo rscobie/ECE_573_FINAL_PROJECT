@@ -194,6 +194,7 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, vert
             coordinates = [(deg_to_km(coord[0] - west_bound), deg_to_km(coord[1] - south_bound)) for coord in coordinates]
 
             #TODO: cut roads that go out of bounds short
+            #TODO: keep track of which roads lead off map, and on which side
             temp_coords = list()
 
             name = "unnamed"
@@ -267,10 +268,3 @@ if __name__ == "__main__":
     rospy.init_node("generation_node")
     #os.chdir("./src/ECE_573_FINAL_PROJECT")#move us into package, ros starts us off in workspace root ece573_ws
     rospy.spin()
-
-    """
-    TODO: refactor: clean up magic numbers (to be more explicit with units), add function to get single elevation at point
-    TODO: elevation locations off by 1 sample (30m) in both directions, currently a workaround in place
-    TODO: some building formats not supported, messes up parsing of coordinate data
-    TODO: find elegent way to cut off ways (buildings/roads) that are partially outside of terrain bounds (left in place for now, using last known elevation)
-    """
