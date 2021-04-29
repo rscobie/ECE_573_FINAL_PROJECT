@@ -65,6 +65,10 @@ to launch the project in its entirety, run
 
 Note that at the moment, the gazebo simulation will continue to run even if the client window is closed. If the application needs to be closed and reopened, errors may occur due to the car already being spawned, and existing chunks from the last session still being present. For best results, delete all models before closing the simulaton.
 
+By default, the camera will follow the car in gazebo. Press escape to exit this
+
+No car will spawn if the starting chunk doesn't have any road to start on. If a new chunk is created, the car will spawn there
+
 # run tests
 do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
 

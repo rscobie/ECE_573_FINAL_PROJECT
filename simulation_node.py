@@ -62,16 +62,19 @@ def chunk_path_callback(chunk_name):
 
     #add car if this is the first time a spawn occurs
     if first_chunk:
-        first_chunk = False
 
         #get starting location
         start = list(road_graph.nodes)
-        start = start[0]
-        start = list((x*1000 for x in start))#convert units from km to m
-
+        if len(start) != 0:
+            start = start[0]
+            start = list((x*1000 for x in start))#convert units from km to m
+        else:
+            print("no road to spawn car in this chunk")
+            return
+        first_chunk = False
         URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
         os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -x {start[0]} -y {start[1]} -z {start[2]+1} -model prius")
-        #os.system("gz camera -c gzclient_camera -f prius")
+        os.system("gz camera -c gzclient_camera -f prius")
 
 if __name__ == "__main__":
     subscriber = rospy.Subscriber("chunk_path", String, chunk_path_callback, queue_size=10) #1d arrays of size 2

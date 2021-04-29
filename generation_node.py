@@ -94,8 +94,19 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
                 pixel_coords.append((coord[0]*TEXTURE_RESOLUTION,coord[1]*TEXTURE_RESOLUTION))
             tex_drawer.polygon(pixel_coords, fill=(255,0,0))
             
+            height = DEFAULT_BUILDING_HEIGHT
+            try:
+                tags = element.tags()
+                if tags != None:
+                    if 'height' in tags.keys():
+                        height = float(tags['height'])/1000#convert to km
+                    elif 'building:levels' in tags.keys():
+                        height = float(tags['building:levels'])*0.004#4m per level
+            except KeyError:
+                pass
+
             poly = Polygon(coordinates)
-            mesh = trimesh.creation.extrude_polygon(poly, height=DEFAULT_BUILDING_HEIGHT)
+            mesh = trimesh.creation.extrude_polygon(poly, height=height)
             
             #get lowest elevation (so that building not floating)
             min_elevation = 100000000000000
