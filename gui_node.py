@@ -193,8 +193,8 @@ def window():
 
 
 if __name__ == '__main__':
-    URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
-    os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -z 1 -model prius")
+    # URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
+    # os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -z 1 -model prius")
     try:
         window()
     except rospy.ROSInterruptException:

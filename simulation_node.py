@@ -3,9 +3,14 @@ import subprocess
 import rospy
 from std_msgs.msg import Float32MultiArray, String
 
+import networkx as nx
+
 MODEL_DIR = "models"
 
+first_chunk = True
+
 def chunk_path_callback(chunk_name):
+  global first_chunk
   chunk_name = str(chunk_name.data)
   print("simulation node received: " + chunk_name)
   MODEL_NAME = chunk_name + ".obj"
@@ -20,9 +25,10 @@ def chunk_path_callback(chunk_name):
       <link name="l1">
         <collision name="c1">
           <geometry>
-            <box>
-              <size>0 0 0</size>
-            </box>
+              <mesh>
+                <uri>model://chunks/{chunk_name}/{MODEL_NAME}</uri>
+                <scale>1000 1000 1000</scale>
+              </mesh>
           </geometry>
         </collision>     
         <visual name="m1">
@@ -42,25 +48,36 @@ def chunk_path_callback(chunk_name):
 
   #where gazebo wants them to be
   NEW_MESH_PATH = os.path.dirname(os.path.realpath(__file__)) + f"/models/chunks/{chunk_name}"
-  #move mesh file over
-  # os.system(f"cp {OLD_MESH_PATH} {NEW_MESH_PATH}/{MODEL_NAME}")
-  #also copy material/texture over #TODO: commented out for now while texture generation WIP
-  # os.system(f"cp {OLD_MODEL_DIR}/{MAT_NAME} {NEW_MESH_PATH}/{MAT_NAME}")
-  # os.system(f"cp {OLD_MODEL_DIR}/{TEX_NAME} {NEW_MESH_PATH}/{TEX_NAME}")
+
+  #read road graph
+  road_graph = nx.readwrite.gpickle.read_gpickle(f"{NEW_MESH_PATH}/{chunk_name}.roads")
+
   #make sdf file
   sdf_file = open(f"{NEW_MESH_PATH}/{chunk_name}.sdf", "w")
   sdf_file.write(sdf_text)
   sdf_file.close()
+  
   #can repeatedly call this command with new model names at runtime
   os.system(f"rosrun gazebo_ros spawn_model -sdf -file {NEW_MESH_PATH}/{chunk_name}.sdf -model {MODEL_NAME}")
+
+  #add car if this is the first time a spawn occurs
+  if first_chunk:
+    first_chunk = False
+
+    #get starting location
+    start = list(road_graph.nodes)
+    start = start[0]
+    start = list((x*1000 for x in start))#convert units from km to m
+
+    URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
+    os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -x {start[0]} -y {start[1]} -z {start[2]+1} -model prius")
+    #os.system("gz camera -c gzclient_camera -f prius")
 
 if __name__ == "__main__":
     subscriber = rospy.Subscriber("chunk_path", String, chunk_path_callback, queue_size=10) #1d arrays of size 2
     rospy.init_node("simulation_node")
-
-    #add car
-    # URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
-    # os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -z 1 -model prius")
-
+    
+    #reset gazebo if it's already running
+    os.system('rosservice call /gazebo/reset_simulation "{}"')
     #this runs as subprocess in background
     subprocess.run(["roslaunch", "gazebo_ros", "empty_world.launch"])
