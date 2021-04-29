@@ -6,7 +6,7 @@ from std_msgs.msg import Float32
 import numpy as np
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
-
+import os
 
 #from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import * #QApplication, QMainWindow, QPushButton, QVBoxLayout
@@ -41,6 +41,7 @@ class MyWindow(QMainWindow):
                 print("an element ",i, "\n")
             rospy.loginfo(self.s_num)
             self.pub.publish(self.s_num)
+            self.s_num.data = list()
             break
             self.rate.sleep()
   
@@ -54,7 +55,7 @@ class MyWindow(QMainWindow):
          
     def callback2(self, data):
         #print("Entering callback data: ", data)
-        #print("velosity is ", data.linear.x)
+        #print("velocity is ", data.linear.x)
         print(self.start_flag)
         if(self.start_flag):
             self.vel_Box.setText(str(data.linear.x))
@@ -94,12 +95,12 @@ class MyWindow(QMainWindow):
         
         #velocity box
         self.vel_Box = QLineEdit(self)
-        self.vel_Box.setPlaceholderText("Velosity")
+        self.vel_Box.setPlaceholderText("Velocity")
         self.vel_Box.setStyleSheet('background-color:white')
         self.vel_Box.setGeometry(250, 200, 125, 30)
         self.vel_Box.show()
 
-        #lantidude Label
+        #latidude Label
         self.lat_label = QLabel(self)
         self.lat_label.setText("Latitude")
         self.lat_label.setGeometry(250, 250, 125, 25)
@@ -107,7 +108,7 @@ class MyWindow(QMainWindow):
 
         #longitude label
         self.lon_label = QLabel(self)
-        self.lon_label.setText("Langitude")
+        self.lon_label.setText("Longitude")
         self.lon_label.setGeometry(400, 250, 125, 25)
         self.lon_label.show()
 
@@ -192,6 +193,8 @@ def window():
 
 
 if __name__ == '__main__':
+    # URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
+    # os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -z 1 -model prius")
     try:
         window()
     except rospy.ROSInterruptException:

@@ -6,11 +6,17 @@
 
 follow instructions at this link: http://wiki.ros.org/Installation/Ubuntu
 
-## install GDAL
-`sudo apt-get install gdal-bin`
+## install prerequisites with APT
+```
+sudo apt-get install python3.7
+sudo apt-get install gdal-bin
+```
+
+## install Gazebo plugin for GPS
+sudo apt-get install ros-noetic-hector-gazebo-plugins
 
 ## install python dependencies
-`pip install trimesh shapely OSMPythonTools elevation GDAL numpy networkx Pillow pyglet`
+`python3.7 -m pip install trimesh[all] shapely OSMPythonTools elevation GDAL numpy networkx Pillow pyglet triangle`
 
 ## initialize ROS workspace
 To initialize the workspace, run: 
@@ -57,8 +63,14 @@ make sure roscore is running first:
 to launch the project in its entirety, run
 `roslaunch ECE_573_FINAL_PROJECT dynamic_world.launch`
 
+Note that at the moment, the gazebo simulation will continue to run even if the client window is closed. If the application needs to be closed and reopened, errors may occur due to the car already being spawned, and existing chunks from the last session still being present. For best results, delete all models before closing the simulaton.
+
+By default, the camera will follow the car in gazebo. Press escape to exit this
+
+No car will spawn if the starting chunk doesn't have any road to start on. If a new chunk is created, the car will spawn there
+
 # run tests
-run the python script `run_tests.py` found in the package's root directory
+do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
 
 ## usage
 ### gui node
@@ -69,6 +81,12 @@ Publish a Float32MultiArray with format [latitude, longitude] to the chunk_coord
 Note: originally colors were saved per-vertex. However, Gazebo doesn't support this. We are in the process of generating textures for the models instead, but this is a work in progress. As a result, the accompanying .mtl and .png files may cause some 3d viewers to reject the model. We use meshlab to preview generated models and have found it to open the models properly.
 ### simulation node
 Publish a String with the path of the chunk to add to the simulation on the chunk_path topic. The chunk will then be loaded into gazebo
+
+# URDF:
+The URDF vehicle model was made using joints, links and transmissions to the joints. These transmissions go to the controllers in the config folder, which contains three .yaml files that control the movement of the vehicle. The launch file vehicle_test.launch includes the URDF, an empty world, and all controllers, with an rqt gui to move the vehicle, and a basic node to publish the controllers. This publishing node robot_state_publisher also publishes the gps sensor messages which can be viewed once the vehicle is spawned in gazebo. Run a rostopic list to see that /gps/fix is indeed one of the topics and then run rostopic echo /gps/fix to see the latitude and longitude being published. The dynamic_world.launch file now includes the URDF and this functionality.
+
+# Spawning Vehicle:
+A launch file called vehicle_test.launch will spawn the vehicle in an empty world for testing purposes. Just type the command: roslaunch ECE_573_FINAL_PROJECT vehicle_test.launch to show the URDF model in gazebo. Currently movement, sensors and other implementations are being modified on the vehicle, which is why it is in this test world. The vehicle still needs modifications, but is now included in dynamic_world.launch.
 
 # simulations_v1.zip:
 A zip file (version 1) that contains two packages, where one package is primarily used for now (simulation_node_gazebo). This package has sdf models of three main environments the group wants to test the vehicle in (neighborhood, city block, freeway). To use these packages, put them in any workspace of choice, in the src directory, then run a catkin_make on that workspace. Use roslaunch simulation_node_gazebo [launch file you want to run] to make gazebo spawn the world with the model area in that world. There are two test worlds and launch files that are just showing the beginnings of figuring out how to spawn models in gazebo. Test 1 could not be included in github because that test included a tutorial urdf model from the github repository that was too big to include. The world consisted of the urdf file, a generated model from gazebo and a chair model from 3DWarehouse to show that they could all be included together. test2.launch will just launch the 3DWarehouse chair model found to show that an sdf model can be put into gazebo. The other launch files are self explanatory, generating the name that's on the launch file into gazebo.

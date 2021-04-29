@@ -13,6 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   gazebo_ros
+  gazebo_plugins
+  sensor_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -218,7 +221,7 @@ include_directories(
 # catkin_add_nosetests(test)
 
 catkin_install_python(PROGRAMS
-  osm_to_building.py
+  generation_node.py
   gui_node.py
   simulation_node.py
   test_node.py
