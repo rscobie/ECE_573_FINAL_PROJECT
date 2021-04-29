@@ -2,18 +2,20 @@
 
 # Installation Instructions
 
+## dependencies
+
 ## install ROS noetic
 
 follow instructions at this link: http://wiki.ros.org/Installation/Ubuntu
 
 ## install prerequisites with APT
 ```
-sudo apt-get install python3.7
+sudo apt-get install python3.8
 sudo apt-get install gdal-bin
 ```
 
 ## install Gazebo plugin for GPS
-sudo apt-get install ros-noetic-hector-gazebo-plugins
+`sudo apt-get install ros-noetic-hector-gazebo-plugins`
 
 ## install python dependencies
 `python3.7 -m pip install trimesh[all] shapely OSMPythonTools elevation GDAL numpy networkx Pillow pyglet triangle`
@@ -69,10 +71,24 @@ By default, the camera will follow the car in gazebo. Press escape to exit this
 
 No car will spawn if the starting chunk doesn't have any road to start on. If a new chunk is created, the car will spawn there
 
-# run tests
+# example usage
+
+TODO: add images and elaborate further
+
+* First, follow the instructions listed above in the "start nodes" section. Two windows should open, as seen below:
+
+* From here, enter the desired starting coordinates. A good example is (32.2319,-110.9501), the U of A campus. Then press enter
+
+* Wait a bit (can be a few minutes depending on server load). Once the generation is complete, you should see two new models in the model list on gazebo. One of these is the prius, the other is the terrain. Right click on the terrain and select "move to". You should now be able to see the terrain.
+
+* A new window should also have opened up. This allows control of the vehicle as seen below:
+
+* Using this new window, you can move the car forward, backward, and steer left and right.
+
+# running tests
 do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
 
-## usage
+## implementation details
 ### gui node
 Enter the desired Latitude and Longitude in the appropriate box, then press Start. After this, the latitude, longitude, and velocity boxes will dynamically change their values.
 ### generation node
