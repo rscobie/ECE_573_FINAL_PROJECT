@@ -74,6 +74,7 @@ def chunk_path_callback(chunk_name):
         first_chunk = False
         URDF_PATH = os.path.dirname(os.path.realpath(__file__)) + "/" + "urdf"
         os.system(f"rosrun gazebo_ros spawn_model -file {URDF_PATH}/prius.urdf -urdf -x {start[0]} -y {start[1]} -z {start[2]+1} -model prius")
+        os.system("roslaunch ECE_573_FINAL_PROJECT car.launch")
         os.system("gz camera -c gzclient_camera -f prius")
 
 if __name__ == "__main__":
