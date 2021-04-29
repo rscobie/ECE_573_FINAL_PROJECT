@@ -75,22 +75,36 @@ No car will spawn if the starting chunk doesn't have any road to start on. If a 
 
 TODO: add images and elaborate further
 
-* First, follow the instructions listed above in the "start nodes" section. Two windows should open, as seen below:
+* First, follow the instructions listed above in the "start nodes" section. Two windows should open, one window being an empty world in gazebo and another is the GUI that was made to enter the starting coordinates.
 
-* From here, enter the desired starting coordinates. A good example is (32.2319,-110.9501), the U of A campus. Then press enter
+* From here, enter the desired starting coordinates. A good example is (32.2319,-110.9501), the U of A campus. Then press Start as shown below:
 
-* Wait a bit (can be a few minutes depending on server load). Once the generation is complete, you should see two new models in the model list on gazebo. One of these is the prius, the other is the terrain. Right click on the terrain and select "move to". You should now be able to see the terrain.
+![Created GUI](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 15-55-42.png)
+Format: ![Alt Text](url)
 
-* A new window should also have opened up. This allows control of the vehicle as seen below:
+* Wait a bit (can be a few minutes depending on server load). Once the generation is complete, you should see two new models in the model list on gazebo. One of these is the prius, the other is the terrain. Right click on the terrain and select "move to". You should now be able to see the terrain. An image of the terrain and vehicle for these coordinates is shown below:
+
+![World Chunk and Vehicle](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 16-02-16.png)
+Format: ![Alt Text](url)
+
+* A new window should also have opened up. This allows control of the vehicle using rqt steering as seen below:
+
+![RQT Steering GUI](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 16-02-30.png)
+Format: ![Alt Text](url)
 
 * Using this new window, you can move the car forward, backward, and steer left and right.
+
+* This prius URDF also has a vehicle gps sensor added onto it, which shows the current gazebo gps coordinates of the vehicle and these coordinates change based on where the vehicle is on the chunk. Simply open a new terminal after the chunk and vehicle have and if the correct plugins are installed, which is in the installation section, then one can run the commands shown below:
+
+![GPS Commands](https://github.com/rscobie/ECE_573_FINAL_PROJECT/edit/main/Screenshot from 2021-04-29 16-04-34.png)
+Format: ![Alt Text](url)
 
 # running tests
 do `rosrun ECE_573_FINAL_PROJECT test_node.py` to run tests
 
 ## implementation details
 ### gui node
-Enter the desired Latitude and Longitude in the appropriate box, then press Start. After this, the latitude, longitude, and velocity boxes will dynamically change their values.
+Enter the desired Latitude and Longitude in the appropriate box, then press Start
 ### generation node
 Publish a Float32MultiArray with format [latitude, longitude] to the chunk_coordinate topic. The output .obj file will be found under ECE_573_FINAL_PROJECT/cache with a name indicated its north, south, east, and west bounds in degrees. 
 
@@ -104,11 +118,14 @@ The URDF vehicle model was made using joints, links and transmissions to the joi
 # Spawning Vehicle:
 A launch file called vehicle_test.launch will spawn the vehicle in an empty world for testing purposes. Just type the command: roslaunch ECE_573_FINAL_PROJECT vehicle_test.launch to show the URDF model in gazebo. Currently movement, sensors and other implementations are being modified on the vehicle, which is why it is in this test world. The vehicle still needs modifications, but is now included in dynamic_world.launch.
 
+<<<<<<< HEAD
 #rqt gui:
 After gazebo launches, the rqt gui will pop up and will display the options of changing the vehicle's velocity and rotation. Before using the rqt_gui, the user must wait for gazebo before pressing any of the rqt buttons. After pressing the button options in the gui, the car will move or rotate at the specified speed. Also, the specified velocity and rad/s will will be displayd to the user in the rqt_gui.
 
 ![](filename rqt_gui.png)
 
+=======
+>>>>>>> 649d6f4bfc9aef69d7422de287051b5684ebe48c
 # simulations_v1.zip:
 A zip file (version 1) that contains two packages, where one package is primarily used for now (simulation_node_gazebo). This package has sdf models of three main environments the group wants to test the vehicle in (neighborhood, city block, freeway). To use these packages, put them in any workspace of choice, in the src directory, then run a catkin_make on that workspace. Use roslaunch simulation_node_gazebo [launch file you want to run] to make gazebo spawn the world with the model area in that world. There are two test worlds and launch files that are just showing the beginnings of figuring out how to spawn models in gazebo. Test 1 could not be included in github because that test included a tutorial urdf model from the github repository that was too big to include. The world consisted of the urdf file, a generated model from gazebo and a chair model from 3DWarehouse to show that they could all be included together. test2.launch will just launch the 3DWarehouse chair model found to show that an sdf model can be put into gazebo. The other launch files are self explanatory, generating the name that's on the launch file into gazebo.
 
@@ -117,3 +134,6 @@ The Alpha Release simulation package which holds four worlds. Three of these wor
 
 # simulations_v3.zip:
 An updated simulation zip file that includes a simulation_node_description package that has a URDF vehicle model inside it. An extra test world and launch file called vehicle_test was also made to simulate the vehicle in an empty world. One can spawn these test worlds by putting this package into a src folder of a workspace, running a catkin_make, and then typing roslaunch simulation_node_gazebo [name of launch file].  
+
+# Test Worlds
+The three test worlds (neighborhood, city, freeway) now have the URDF vehicle in them. To move the vehicle around in these worlds, use the rqt steering GUI. Testing in these three worlds has been done to make sure the vehicle and sensors are working properly.
