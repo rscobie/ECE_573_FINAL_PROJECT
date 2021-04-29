@@ -1,6 +1,38 @@
 <launch>
+
+  <arg name="model" default="$(find ECE_573_FINAL_PROJECT)/urdf/prius.urdf"/>
+  
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find ECE_573_FINAL_PROJECT)/worlds/freeway.world"/>
     <!-- more default parameters can be changed here -->
   </include>
+  
+  <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-z 1.0 -unpause -urdf -model prius -param robot_description" respawn="false" output="screen" />
+  
+  <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="30.0" />
+  </node>
+  
+  <rosparam command="load"
+            file="$(find ECE_573_FINAL_PROJECT)/config/joints1.yaml"
+            ns="prius_joint_state_controller" />
+  <rosparam command="load"
+            file="$(find ECE_573_FINAL_PROJECT)/config/steering.yaml"
+            ns="prius_steering_controller" />
+  <rosparam command="load"
+            file="$(find ECE_573_FINAL_PROJECT)/config/diffdrive1.yaml"
+            ns="prius_diff_drive_controller" />
+  
+  <node name="prius_controller_spawner" pkg="controller_manager" type="spawner"
+    args="prius_joint_state_controller
+          prius_steering_controller
+          prius_diff_drive_controller"/>
+          
+  <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
+    <param name="default_topic" value="/prius_diff_drive_controller/cmd_vel"/>
+  </node>
+  
 </launch>
