@@ -46,7 +46,7 @@ git clone https://github.com/rscobie/ECE_573_FINAL_PROJECT.git
 
 Build the package contained in the cloned repo by going back to the workspace root directory:
 ```
-cd ../../
+cd ../
 catkin_make
 ```
 
@@ -60,7 +60,7 @@ a new shell is opened. Now, our ECE_573_FINAL_PROJECT should be runnable using r
 
 # start nodes
 
-make sure roscore is running first:
+make sure roscore is running first in a separate terminal:
 `roscore`
 
 to launch the project in its entirety, run
