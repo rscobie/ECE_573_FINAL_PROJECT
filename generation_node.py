@@ -228,7 +228,7 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, vert
                 or y[i] < 0 or y[i] > max_width \
                 or x[i+1] < 0 or x[i+1] > max_width \
                 or y[i+1] < 0 or y[i+1] > max_width:
-                    break #don't include segment if it's out bounds
+                    continue #don't include segment if it's out bounds
                 elev1 = get_elevation([x[i],y[i]], elevations)/1000
                 elev2 = get_elevation([x[i+1],y[i+1]], elevations)/1000
                 road_graph.add_edge( (x[i],y[i],elev1),(x[i+1],y[i+1],elev2), weight=math.sqrt( (x[i] - x[i+1])**2 + (y[i] - y[i+1])**2 ) )#weighted edge to destination
