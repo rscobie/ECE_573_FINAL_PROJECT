@@ -11,6 +11,7 @@ follow instructions at this link: http://wiki.ros.org/Installation/Ubuntu
 ## install prerequisites with APT
 ```
 sudo apt-get install python3.8
+sudo apt-get install python3-pip
 sudo apt-get install gdal-bin
 ```
 
@@ -18,7 +19,7 @@ sudo apt-get install gdal-bin
 `sudo apt-get install ros-noetic-hector-gazebo-plugins`
 
 ## install python dependencies
-`python3.7 -m pip install trimesh[all] shapely OSMPythonTools elevation GDAL numpy networkx Pillow pyglet triangle`
+`python3.8 -m pip install trimesh[all] shapely OSMPythonTools elevation GDAL numpy networkx Pillow pyglet triangle`
 
 ## initialize ROS workspace
 To initialize the workspace, run: 
