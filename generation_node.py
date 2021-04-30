@@ -94,6 +94,22 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
                 pixel_coords.append((coord[0]*TEXTURE_RESOLUTION,coord[1]*TEXTURE_RESOLUTION))
             tex_drawer.polygon(pixel_coords, fill=(255,0,0))
             
+            #get lowest elevation (so that building not floating)
+            min_elevation = 100000000000000
+            for coord in coordinates:
+                elevation = get_elevation(coord, elevations)
+                if elevation < min_elevation:
+                    min_elevation = elevation
+            min_elevation /= 1000#meters to km
+
+            #get highest elevation (so that building not floating)
+            max_elevation = -100000000000000
+            for coord in coordinates:
+                elevation = get_elevation(coord, elevations)
+                if elevation > max_elevation:
+                    max_elevation = elevation
+            max_elevation /= 1000#meters to km
+
             height = DEFAULT_BUILDING_HEIGHT
             try:
                 tags = element.tags()
@@ -104,17 +120,11 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
                         height = float(tags['building:levels'])*0.004#4m per level
             except KeyError:
                 pass
+            
+            height += max_elevation - min_elevation #offset to prevent buildings from sinking into hills
 
             poly = Polygon(coordinates)
             mesh = trimesh.creation.extrude_polygon(poly, height=height)
-            
-            #get lowest elevation (so that building not floating)
-            min_elevation = 100000000000000
-            for coord in coordinates:
-                elevation = get_elevation(coord, elevations)
-                if elevation < min_elevation:
-                    min_elevation = elevation
-            min_elevation /= 1000#meters to km
             
             #mesh.apply_translation((0,0,min_elevation))
             for i in range(len(mesh.vertices)):
@@ -212,7 +222,13 @@ def gen_roads(south_bound, west_bound, north_bound, east_bound, elevations, vert
                 pixel_coords.append((coord[0]*TEXTURE_RESOLUTION,coord[1]*TEXTURE_RESOLUTION))
             tex_drawer.line(pixel_coords, fill=(0,0,0), width=int(TEXTURE_RESOLUTION/100))#TODO: do I need to discretize this?
             #add roads to graph
+            max_width = texture.size[0]/TEXTURE_RESOLUTION
             for i in range(len(x) - 1):
+                if x[i] < 0 or x[i] > max_width \
+                or y[i] < 0 or y[i] > max_width \
+                or x[i+1] < 0 or x[i+1] > max_width \
+                or y[i+1] < 0 or y[i+1] > max_width:
+                    break #don't include segment if it's out bounds
                 elev1 = get_elevation([x[i],y[i]], elevations)/1000
                 elev2 = get_elevation([x[i+1],y[i+1]], elevations)/1000
                 road_graph.add_edge( (x[i],y[i],elev1),(x[i+1],y[i+1],elev2), weight=math.sqrt( (x[i] - x[i+1])**2 + (y[i] - y[i+1])**2 ) )#weighted edge to destination
