@@ -120,6 +120,8 @@ def gen_buildings(south_bound, west_bound, north_bound, east_bound, elevations, 
                         height = float(tags['building:levels'])*0.004#4m per level
             except KeyError:
                 pass
+            except ValueError:
+                pass
             
             height += max_elevation - min_elevation #offset to prevent buildings from sinking into hills
 
